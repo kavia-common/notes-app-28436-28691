@@ -64,21 +64,69 @@ api.interceptors.response.use(
   }
 );
 
+/**
+ * Extracts a user-friendly error message from axios error responses that may follow
+ * the OpenAPI ErrorResponse { code, message, details } shape or validation errors.
+ */
+export function getApiErrorMessage(err: any, fallback = "Request failed.") {
+  const data = err?.response?.data;
+  if (!data) return fallback;
+
+  // Common shapes:
+  // - { message: string, code?: number, details?: string }
+  // - { detail: string | Array<{ msg: string }> } (FastAPI style)
+  // - { errors: { field: ["msg", ...] } } (validation dict)
+  // - { error: string }
+  const possible =
+    data?.message ||
+    data?.error ||
+    data?.details ||
+    (Array.isArray(data?.detail)
+      ? data.detail.map((d: any) => d?.msg || d).filter(Boolean).join(", ")
+      : data?.detail);
+
+  if (possible && typeof possible === "string") return possible;
+
+  if (data?.errors && typeof data.errors === "object") {
+    try {
+      const firstKey = Object.keys(data.errors)[0];
+      const firstVal = data.errors[firstKey];
+      if (Array.isArray(firstVal)) return firstVal[0];
+      if (typeof firstVal === "string") return firstVal;
+    } catch {
+      /* ignore parsing issues */
+    }
+  }
+  return fallback;
+}
+
 // PUBLIC_INTERFACE
 export async function login(email: string, password: string) {
   /** Calls POST /auth/login to authenticate and returns access token object. */
-  const { data } = await api.post("/auth/login", { email, password });
-  // Accept either {access_token} or {token} (for cross spec compat)
-  const access = data?.access_token || data?.token;
-  if (access) setAuthToken(access);
-  return data;
+  try {
+    const { data } = await api.post("/auth/login", { email, password });
+    // Accept either {access_token} or {token} (for cross spec compat)
+    const access = data?.access_token || data?.token;
+    if (access) setAuthToken(access);
+    return data;
+  } catch (err: any) {
+    // Re-throw with normalized message so UI can show meaningful error
+    const message = getApiErrorMessage(err, "Login failed. Check your credentials.");
+    throw { ...err, uiMessage: message };
+  }
 }
 
 // PUBLIC_INTERFACE
 export async function register(username: string, email: string, password: string) {
   /** Calls POST /auth/register to create a new user. Returns created user. */
-  const { data } = await api.post("/auth/register", { username, email, password });
-  return data;
+  try {
+    const payload = { username, email, password }; // matches OpenAPI
+    const { data } = await api.post("/auth/register", payload);
+    return data;
+  } catch (err: any) {
+    const message = getApiErrorMessage(err, "Registration failed.");
+    throw { ...err, uiMessage: message };
+  }
 }
 
 // PUBLIC_INTERFACE

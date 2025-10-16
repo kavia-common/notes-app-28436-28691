@@ -25,13 +25,22 @@ export function AuthProvider({ children }) {
   }, [token]);
 
   const login = useCallback(async (email, password) => {
-    const data = await apiLogin(email, password);
-    const access = data?.access_token || data?.token;
-    setToken(access || null);
+    try {
+      const data = await apiLogin(email, password);
+      const access = data?.access_token || data?.token;
+      setToken(access || null);
+    } catch (e) {
+      // propagate with normalized message if present
+      throw e;
+    }
   }, []);
 
   const register = useCallback(async (username, email, password) => {
-    await apiRegister(username, email, password);
+    try {
+      await apiRegister(username, email, password);
+    } catch (e) {
+      throw e;
+    }
   }, []);
 
   const logout = useCallback(async () => {

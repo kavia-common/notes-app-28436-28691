@@ -15,7 +15,7 @@ This is the web React frontend for the multi-container Notes App. It provides:
 
 2) Configure environment
    cp .env.example .env
-   Edit .env and set REACT_APP_API_BASE_URL to your backend API (e.g., http://localhost:8000/api/v1)
+   Edit .env and set REACT_APP_API_BASE_URL to your backend API (e.g., http://localhost:8000/api/v1). You may also set REACT_APP_API_DEBUG=true to log API calls for troubleshooting.
 
 3) Run the app
    npm start
@@ -42,4 +42,5 @@ This is the web React frontend for the multi-container Notes App. It provides:
 - Tokens are stored in localStorage for persistence. On logout, token is cleared.
 - Axios interceptors attach Authorization header and handle 401 by redirecting to login.
 - UI is minimal and accessible.
+- Registration flow: after a successful POST /auth/register, the app automatically logs in the user and navigates to /notes. Validation errors from the backend are displayed inline.
 

@@ -3,7 +3,7 @@ import { useAuth } from "../services/auth.jsx";
 import { Link, useNavigate } from "react-router-dom";
 
 const RegisterPage: React.FC = () => {
-  const { register } = useAuth();
+  const { register, login } = useAuth();
   const navigate = useNavigate();
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
@@ -16,10 +16,15 @@ const RegisterPage: React.FC = () => {
     setSubmitting(true);
     setError(null);
     try {
+      // Create account
       await register(username, email, password);
-      navigate("/login");
+      // Auto-login to satisfy "successful backend response leads to login/token state and navigation"
+      await login(email, password);
+      navigate("/notes", { replace: true });
     } catch (e: any) {
-      setError(e?.response?.data?.message || "Registration failed.");
+      // Prefer normalized uiMessage if provided by api.ts
+      const msg = e?.uiMessage || e?.response?.data?.message || "Registration failed.";
+      setError(msg);
     } finally {
       setSubmitting(false);
     }

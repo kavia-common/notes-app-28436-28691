@@ -22,13 +22,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [token]);
 
   const login = useCallback(async (email: string, password: string) => {
-    const data = await apiLogin(email, password);
-    const access = data?.access_token || data?.token;
-    setToken(access || null);
+    try {
+      const data = await apiLogin(email, password);
+      const access = data?.access_token || data?.token;
+      setToken(access || null);
+    } catch (e) {
+      throw e;
+    }
   }, []);
 
   const register = useCallback(async (username: string, email: string, password: string) => {
-    await apiRegister(username, email, password);
+    try {
+      await apiRegister(username, email, password);
+    } catch (e) {
+      throw e;
+    }
   }, []);
 
   const logout = useCallback(async () => {
