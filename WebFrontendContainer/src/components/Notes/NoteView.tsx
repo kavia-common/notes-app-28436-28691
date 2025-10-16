@@ -1,12 +1,13 @@
 import React, { useEffect, useState } from "react";
 import { getNote, summarizeNote } from "../../services/api";
 import { useParams } from "react-router-dom";
+import type { Note } from "../../types/index";
 
 type Props = {
   onError: (msg: string) => void;
 };
 
-const NoteView: React.FC<Props> = ({ onError }) => {
+const NoteView: React.FC<Props> = ({ onError }): JSX.Element => {
   const { id } = useParams();
   const [note, setNote] = useState<Note | null>(null);
   const [loading, setLoading] = useState<boolean>(true);

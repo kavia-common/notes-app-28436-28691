@@ -9,19 +9,24 @@ import "./styles/utilities.css";
 import "./App.css";
 
 /**
- * Root Application component with public routes only (auth disabled).
+ * Root Application component with no-auth mode.
+ * All routes are now public and accessible without authentication.
+ * Users go directly to notes interface.
  */
-function App() {
+function App(): JSX.Element {
   return (
     <BrowserRouter>
       <Header />
       <Routes>
-        <Route path="/" element={<Navigate to="/notes" replace />} />
+        {/* Direct to notes home */}
+        <Route path="/" element={<NotesPage />} />
         <Route path="/notes" element={<NotesPage />} />
         <Route path="/notes/new" element={<NoteCreatePage />} />
         <Route path="/notes/:id/edit" element={<NoteEditPage />} />
         <Route path="/notes/:id" element={<NoteDetailPage />} />
-        <Route path="*" element={<div className="container section">Not Found</div>} />
+        
+        {/* Fallback */}
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>
   );

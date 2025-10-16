@@ -1,0 +1,5 @@
+{
+  "extends": "./tsconfig.json",
+  "include": ["src/**/*.ts", "src/**/*.tsx", "src/react-app-env.d.ts"],
+  "exclude": ["node_modules", "public", "**/*.js", "**/*.jsx", "**/*.test.ts", "**/*.test.tsx"]
+}

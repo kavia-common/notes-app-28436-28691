@@ -1,12 +1,13 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { listNotes, deleteNote } from "../../services/api";
+import type { Note } from "../../types/index";
 
 type Props = {
   onError: (msg: string) => void;
 };
 
-const NotesList: React.FC<Props> = ({ onError }) => {
+const NotesList: React.FC<Props> = ({ onError }): JSX.Element => {
   const [notes, setNotes] = useState<Note[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [searchParams, setSearchParams] = useSearchParams();

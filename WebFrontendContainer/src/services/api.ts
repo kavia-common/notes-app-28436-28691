@@ -1,25 +1,45 @@
 import axios from "axios";
+import * as noAuthApi from "./api-noauth";
 
 /**
- * Axios API client configured with:
- * - Base URL from REACT_APP_API_BASE_URL
- * - Optional debug logging via REACT_APP_API_DEBUG
- * - No authentication headers or redirects (auth disabled)
+ * Axios API client with no-auth mode support.
+ * When REACT_APP_NO_AUTH=true, uses local storage instead of backend.
  */
-const baseURL = process.env.REACT_APP_API_BASE_URL || "http://localhost:8000/api/v1";
-const debug = (process.env.REACT_APP_API_DEBUG || "false").toLowerCase() === "true";
+
+// Detect no-auth mode - must check at module load time
+const NO_AUTH_MODE = process.env.REACT_APP_NO_AUTH === 'true';
+const useProxy: boolean = process.env.REACT_APP_USE_PROXY === 'true';
+const baseURL: string = useProxy 
+  ? "" 
+  : (process.env.REACT_APP_API_BASE_URL || "http://localhost:3001/api/v1");
+const debug: boolean = process.env.REACT_APP_API_DEBUG === 'true';
+
+if (debug) {
+  console.info(`[API CONFIG] No-Auth Mode: ${NO_AUTH_MODE}`);
+  console.info(`[API CONFIG] Mode: ${useProxy ? "PROXY" : "ABSOLUTE_URL"}`);
+  console.info(`[API CONFIG] Base URL: ${baseURL || "(same-origin)"}`);
+}
 
 export const api = axios.create({
   baseURL,
   headers: {
     "Content-Type": "application/json",
   },
+  timeout: 30000,
 });
 
 api.interceptors.request.use((config) => {
+  // In no-auth mode, we don't need authorization headers
+  if (!NO_AUTH_MODE) {
+    const token = localStorage.getItem("token");
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+  }
+
   if (debug) {
-    // eslint-disable-next-line no-console
-    console.log("[API REQ]", config.method?.toUpperCase(), config.baseURL + config.url, config.params || "", config.data || "");
+    const fullUrl = config.baseURL ? `${config.baseURL}${config.url}` : config.url;
+    console.log("[API REQ]", config.method?.toUpperCase(), fullUrl, config.params || "", config.data || "");
   }
   return config;
 });
@@ -27,85 +47,163 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (resp) => {
     if (debug) {
-      // eslint-disable-next-line no-console
       console.log("[API RES]", resp.status, resp.config.url, resp.data);
     }
     return resp;
   },
   (error) => {
-    // Pass-through errors without auth redirects
+    if (debug) {
+      console.error("[API ERR]", error.response?.status, error.response?.data || error.message);
+    }
+    
+    if (error.response) {
+      error.uiMessage = getApiErrorMessage(error);
+    } else if (error.request) {
+      const endpoint = error.config?.url || "unknown endpoint";
+      error.uiMessage = "Network error. Backend may not be available.";
+      
+      if (debug) {
+        console.error("[NETWORK ERROR]", {
+          endpoint,
+          baseURL,
+          useProxy,
+          message: error.message
+        });
+      }
+    } else {
+      error.uiMessage = "Request failed. Please try again.";
+    }
     return Promise.reject(error);
   }
 );
 
-/**
- * Extracts a user-friendly error message from axios error responses that may follow
- * the OpenAPI ErrorResponse { code, message, details } shape or validation errors.
- */
 export function getApiErrorMessage(err: any, fallback = "Request failed.") {
   const data = err?.response?.data;
   if (!data) return fallback;
 
-  const possible =
-    data?.message ||
-    data?.error ||
-    data?.details ||
-    (Array.isArray(data?.detail)
-      ? data.detail.map((d: any) => d?.msg || d).filter(Boolean).join(", ")
-      : data?.detail);
-
-  if (possible && typeof possible === "string") return possible;
-
-  if (data?.errors && typeof data.errors === "object") {
-    try {
-      const firstKey = Object.keys(data.errors)[0];
-      const firstVal = data.errors[firstKey];
-      if (Array.isArray(firstVal)) return firstVal[0];
-      if (typeof firstVal === "string") return firstVal;
-    } catch {
-      /* ignore parsing issues */
-    }
+  if (data?.message && typeof data.message === "string") {
+    return data.message;
   }
+
+  if (Array.isArray(data?.detail)) {
+    const messages = data.detail
+      .map((d: any) => {
+        if (typeof d === "string") return d;
+        if (d?.msg) return d.msg;
+        if (d?.message) return d.message;
+        return null;
+      })
+      .filter(Boolean);
+    if (messages.length > 0) return messages.join(", ");
+  }
+
+  if (data?.detail && typeof data.detail === "string") {
+    return data.detail;
+  }
+
+  if (data?.error && typeof data.error === "string") {
+    return data.error;
+  }
+
   return fallback;
 }
 
 // PUBLIC_INTERFACE
 export async function listNotes(params: { page?: number; page_size?: number; search?: string } = {}) {
-  /** Calls GET /notes with optional pagination and search. */
-  const { data } = await api.get("/notes", { params });
-  return data;
+  /** Calls GET /notes with optional pagination and search. In no-auth mode, uses localStorage. */
+  if (NO_AUTH_MODE) {
+    return noAuthApi.listNotes(params);
+  }
+  
+  try {
+    const { data } = await api.get("/notes", { params });
+    return data;
+  } catch (err: any) {
+    throw err;
+  }
 }
 
 // PUBLIC_INTERFACE
 export async function createNote(payload: { title: string; content: string }) {
-  /** Calls POST /notes to create a note. */
-  const { data } = await api.post("/notes", payload);
-  return data;
+  /** Calls POST /notes to create a note. In no-auth mode, uses localStorage. */
+  if (NO_AUTH_MODE) {
+    return noAuthApi.createNote(payload);
+  }
+  
+  try {
+    const { data } = await api.post("/notes", payload);
+    return data;
+  } catch (err: any) {
+    throw err;
+  }
 }
 
 // PUBLIC_INTERFACE
 export async function getNote(id: string) {
-  /** Calls GET /notes/{id} to retrieve a note. */
-  const { data } = await api.get(`/notes/${id}`);
-  return data;
+  /** Calls GET /notes/{id} to retrieve a note. In no-auth mode, uses localStorage. */
+  if (NO_AUTH_MODE) {
+    return noAuthApi.getNote(id);
+  }
+  
+  try {
+    const { data } = await api.get(`/notes/${id}`);
+    return data;
+  } catch (err: any) {
+    throw err;
+  }
 }
 
 // PUBLIC_INTERFACE
 export async function updateNote(id: string, payload: { title: string; content: string }) {
-  /** Calls PUT /notes/{id} to update a note. */
-  const { data } = await api.put(`/notes/${id}`, payload);
-  return data;
+  /** Calls PUT /notes/{id} to update a note. In no-auth mode, uses localStorage. */
+  if (NO_AUTH_MODE) {
+    return noAuthApi.updateNote(id, payload);
+  }
+  
+  try {
+    const { data } = await api.put(`/notes/${id}`, payload);
+    return data;
+  } catch (err: any) {
+    throw err;
+  }
 }
 
 // PUBLIC_INTERFACE
 export async function deleteNote(id: string) {
-  /** Calls DELETE /notes/{id} to delete a note. */
-  await api.delete(`/notes/${id}`);
+  /** Calls DELETE /notes/{id} to delete a note. In no-auth mode, uses localStorage. */
+  if (NO_AUTH_MODE) {
+    return noAuthApi.deleteNote(id);
+  }
+  
+  try {
+    await api.delete(`/notes/${id}`);
+  } catch (err: any) {
+    throw err;
+  }
 }
 
 // PUBLIC_INTERFACE
 export async function summarizeNote(id: string) {
-  /** Calls POST /notes/{id}/summarize to generate a summary for a note. */
-  const { data } = await api.post(`/notes/${id}/summarize`);
-  return data;
+  /** Calls POST /notes/{id}/summarize to generate a summary. In no-auth mode, uses local heuristics. */
+  if (NO_AUTH_MODE) {
+    return noAuthApi.summarizeNote(id);
+  }
+  
+  try {
+    const { data } = await api.post(`/notes/${id}/summarize`);
+    return data;
+  } catch (err: any) {
+    throw err;
+  }
+}
+
+// PUBLIC_INTERFACE
+export async function importNoteFromFile(file: File) {
+  /** Imports a note from a file. Available in no-auth mode using localStorage. */
+  if (NO_AUTH_MODE) {
+    return noAuthApi.importNoteFromFile(file);
+  }
+  
+  // In auth mode, this feature is not supported by the backend
+  throw new Error('File import is not available in authenticated mode. Please use the create note form.');
 }

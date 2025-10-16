@@ -13,17 +13,41 @@ const RegisterPage: React.FC = () => {
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (submitting) return; // Prevent double submission
+    
     setSubmitting(true);
     setError(null);
+    
     try {
       // Create account
       await register(username, email, password);
-      // Auto-login to satisfy "successful backend response leads to login/token state and navigation"
+      
+      // Auto-login after successful registration
       await login(email, password);
+      
+      // Redirect to notes on success
       navigate("/notes", { replace: true });
     } catch (e: any) {
-      // Prefer normalized uiMessage if provided by api.ts
-      const msg = e?.uiMessage || e?.response?.data?.message || "Registration failed.";
+      // Use enhanced error message from API client with specific guidance
+      let msg = e?.uiMessage || e?.response?.data?.message || "Registration failed. Please try again.";
+      
+      // Add helpful context for network errors
+      if (e?.request && !e?.response) {
+        // Network error - backend not reachable
+        msg = e.uiMessage || "Cannot reach backend registration service.";
+        
+        // Add detailed troubleshooting info
+        const backendUrl = e?.config?.baseURL || "the configured backend URL";
+        msg += `\n\n🔧 Troubleshooting:\n• Backend URL: ${backendUrl}\n• Ensure Backend API Container is running\n• Check CORS configuration\n• Verify network connectivity`;
+        
+        // Add technical details if available
+        const statusText = e?.request?.statusText;
+        if (statusText) {
+          msg += `\n• Status: ${statusText}`;
+        }
+      }
+      
       setError(msg);
     } finally {
       setSubmitting(false);
@@ -31,28 +55,83 @@ const RegisterPage: React.FC = () => {
   };
 
   return (
-    <div className="container" style={{ maxWidth: 420, padding: 16 }}>
-      <h2>Register</h2>
-      <form onSubmit={onSubmit}>
-        <div style={{ marginBottom: 12 }}>
-          <label htmlFor="username">Username</label>
-          <input id="username" required value={username} onChange={(e) => setUsername(e.target.value)} style={{ display: "block", width: "100%", padding: 8 }} />
+    <div className="container section" style={{ maxWidth: 480 }}>
+      <div className="card" style={{ padding: 32 }}>
+        <h1 className="h1">Register</h1>
+        <p className="muted" style={{ marginTop: 8, marginBottom: 24 }}>
+          Create your account to start taking notes
+        </p>
+        
+        <form onSubmit={onSubmit} className="stack">
+          <div>
+            <label htmlFor="username" className="label">Username</label>
+            <input 
+              id="username" 
+              required 
+              className="input"
+              value={username} 
+              onChange={(e) => setUsername(e.target.value)}
+              placeholder="Choose a username"
+              disabled={submitting}
+              autoComplete="username"
+            />
+          </div>
+          
+          <div>
+            <label htmlFor="email" className="label">Email</label>
+            <input 
+              id="email" 
+              type="email" 
+              required 
+              className="input"
+              value={email} 
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="your.email@example.com"
+              disabled={submitting}
+              autoComplete="email"
+            />
+          </div>
+          
+          <div>
+            <label htmlFor="password" className="label">Password</label>
+            <input 
+              id="password" 
+              type="password" 
+              required 
+              className="input"
+              value={password} 
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Choose a strong password"
+              disabled={submitting}
+              minLength={6}
+              autoComplete="new-password"
+            />
+            <small className="muted" style={{ display: "block", marginTop: 4 }}>
+              At least 6 characters
+            </small>
+          </div>
+          
+          {error && (
+            <div className="banner banner-error" role="alert" style={{ whiteSpace: "pre-wrap" }}>
+              {error}
+            </div>
+          )}
+          
+          <button 
+            type="submit" 
+            className="btn btn-primary" 
+            disabled={submitting}
+            style={{ width: "100%" }}
+            aria-busy={submitting}
+          >
+            {submitting ? "Creating account..." : "Register"}
+          </button>
+        </form>
+        
+        <div style={{ marginTop: 20, textAlign: "center" }}>
+          <span className="muted">Already have an account? </span>
+          <Link to="/login" className="App-link">Login here</Link>
         </div>
-        <div style={{ marginBottom: 12 }}>
-          <label htmlFor="email">Email</label>
-          <input id="email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} style={{ display: "block", width: "100%", padding: 8 }} />
-        </div>
-        <div style={{ marginBottom: 12 }}>
-          <label htmlFor="password">Password</label>
-          <input id="password" type="password" required value={password} onChange={(e) => setPassword(e.target.value)} style={{ display: "block", width: "100%", padding: 8 }} />
-        </div>
-        {error && <div style={{ color: "red", marginBottom: 8 }}>{error}</div>}
-        <button type="submit" className="theme-toggle" disabled={submitting} style={{ padding: "8px 12px" }}>
-          {submitting ? "Registering..." : "Register"}
-        </button>
-      </form>
-      <div style={{ marginTop: 12 }}>
-        Already have an account? <Link to="/login">Login</Link>
       </div>
     </div>
   );
