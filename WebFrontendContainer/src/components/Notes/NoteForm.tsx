@@ -24,8 +24,26 @@ const NoteForm: React.FC<Props> = ({ initial = { title: "", content: "" }, onSub
     setLoading(true);
     try {
       await onSubmit({ title: title.trim(), content: content.trim() });
+      // Help verification in preview logs
+      // eslint-disable-next-line no-console
+      console.info("[NoteForm] Submit succeeded");
     } catch (e: any) {
-      setError(e?.response?.data?.message || "Failed to submit form.");
+      // Prefer detailed server response when present (OpenAPI ErrorResponse or FastAPI-style detail)
+      const msg =
+        e?.uiMessage ||
+        e?.response?.data?.message ||
+        (Array.isArray(e?.response?.data?.detail)
+          ? e.response.data.detail.map((d: any) => d?.msg || d).filter(Boolean).join(", ")
+          : e?.response?.data?.detail) ||
+        e?.message ||
+        "Failed to submit form.";
+      // eslint-disable-next-line no-console
+      console.error("[NoteForm] Submit failed:", {
+        status: e?.response?.status,
+        statusText: e?.response?.statusText,
+        data: e?.response?.data,
+      });
+      setError(msg);
     } finally {
       setLoading(false);
     }

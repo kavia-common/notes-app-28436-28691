@@ -6,7 +6,13 @@ import axios from "axios";
  * - Optional debug logging via REACT_APP_API_DEBUG
  * - Auth header support via setAuthToken
  */
-const baseURL = process.env.REACT_APP_API_BASE_URL || "http://localhost:8000/api/v1";
+let rawBase = process.env.REACT_APP_API_BASE_URL || "http://localhost:8000/api/v1";
+// Normalize base URL to ensure it ends with /api/v1 per OpenAPI and no double slashes on join
+if (!/\/api\/v1\/?$/.test(rawBase)) {
+  // If caller provided host root, append /api/v1
+  rawBase = rawBase.replace(/\/+$/, "") + "/api/v1";
+}
+const baseURL = rawBase.replace(/\/+$/, ""); // no trailing slash to keep paths consistent
 const debug = (process.env.REACT_APP_API_DEBUG || "false").toLowerCase() === "true";
 
 export const api = axios.create({
@@ -29,6 +35,18 @@ export function setAuthToken(token: string | null) {
 }
 
 api.interceptors.request.use((config) => {
+  // Ensure Authorization is present if token is stored
+  try {
+    const token = localStorage.getItem("token");
+    // Avoid assigning plain object to headers (breaks AxiosRequestHeaders type)
+    const headers: Record<string, any> = (config.headers as any) || {};
+    if (token && !headers.Authorization) {
+      headers.Authorization = `Bearer ${token}`;
+    }
+    config.headers = headers as any;
+  } catch {
+    // ignore storage issues
+  }
   if (debug) {
     // eslint-disable-next-line no-console
     console.log("[API REQ]", config.method?.toUpperCase(), (config.baseURL || "") + (config.url || ""), config.params || "", config.data || "");
@@ -45,7 +63,10 @@ api.interceptors.response.use(
     return resp;
   },
   (error) => {
-    // Pass-through errors without auth redirects
+    if (debug) {
+      // eslint-disable-next-line no-console
+      console.error("[API ERR]", error?.response?.status, error?.response?.config?.url, error?.response?.data || error?.message);
+    }
     return Promise.reject(error);
   }
 );

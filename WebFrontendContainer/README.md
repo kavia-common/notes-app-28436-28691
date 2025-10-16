@@ -11,6 +11,7 @@ A lightweight React app with a polished, responsive UI for managing notes withou
    cp .env.example .env
    # then edit .env to set:
    # REACT_APP_API_BASE_URL=http://localhost:8000/api/v1
+   # Note: The base URL must include /api/v1 to match backend OpenAPI paths.
 
 3) Start the dev server
    npm start
