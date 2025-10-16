@@ -16,6 +16,20 @@ A lightweight React app with a polished, responsive UI for managing notes withou
    npm start
    App runs at http://localhost:3000
 
+## Preview/Container environments
+
+If you access the CRA dev server via a preview domain or reverse proxy and see "Invalid Host header":
+
+- Use the provided .env.development which includes:
+  - HOST=0.0.0.0 (bind to all interfaces)
+  - DANGEROUSLY_DISABLE_HOST_CHECK=true (allow preview host)
+- If hot reloading behaves inconsistently, you can also set FAST_REFRESH=false.
+
+Commands:
+- npm start will pick up .env.development automatically in development mode.
+
+Security note: These flags apply to development only and should not be used in production builds.
+
 ## Notes
 
 - All routes are public. No auth remnants should affect the UI.

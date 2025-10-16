@@ -27,7 +27,7 @@ export function AuthProvider({ children }) {
   const login = useCallback(async (email, password) => {
     try {
       const data = await apiLogin(email, password);
-      const access = data?.access_token || data?.token;
+      const access = data && typeof data === "object" ? data.access_token : null;
       setToken(access || null);
     } catch (e) {
       // propagate with normalized message if present

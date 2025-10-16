@@ -22,9 +22,14 @@ A polished, lightweight React UI for managing notes without authentication (prev
    If not set, the app uses CRA proxy to http://localhost:3001 for relative API calls during development.
    Edit .env and set REACT_APP_API_BASE_URL if you need an absolute URL (e.g., deployed backend).
 
+   For preview/container environments, ensure .env.development includes:
+   - HOST=0.0.0.0
+   - DANGEROUSLY_DISABLE_HOST_CHECK=true
+   Optionally set FAST_REFRESH=false if hot reload loops occur.
+
 3) Run the app
    npm start
-   Open http://localhost:3000
+   Open http://localhost:3000 (or the platform-provided preview URL)
 
 ## Environment Variables
 

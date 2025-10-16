@@ -12,7 +12,7 @@ type AuthContextType = {
   register: (username: string, email: string, password: string) => Promise<void>;
 };
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+const AuthContext: React.Context<AuthContextType | undefined> = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [token, setToken] = useState<string | null>(localStorage.getItem("token"));
@@ -23,8 +23,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const login = useCallback(async (email: string, password: string) => {
     try {
-      const data = await apiLogin(email, password);
-      const access = data?.access_token || data?.token;
+      const data = await apiLogin(email, password) as { access_token?: string; expires_in?: number } | any;
+      const access = (data && typeof data === "object" && "access_token" in data ? (data.access_token as string | undefined) : undefined) || null;
       setToken(access || null);
     } catch (e) {
       throw e;
@@ -55,7 +55,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     [token, login, logout, register]
   );
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return React.createElement(AuthContext.Provider, { value }, children);
 }
 
 // PUBLIC_INTERFACE
