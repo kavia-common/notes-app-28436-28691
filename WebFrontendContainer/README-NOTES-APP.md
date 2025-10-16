@@ -1,8 +1,11 @@
 # Notes App - Web Frontend (React)
 
-This is the web React frontend for the multi-container Notes App. It provides:
-- User authentication (Register, Login, Logout)
-- Protected routes
+This is the web React frontend for the multi-container Notes App. In this preview build, authentication is disabled:
+- No login/register pages or protected routes
+- All routes are public and land on the Notes list
+- No Authorization headers are attached to requests
+
+It provides:
 - Notes CRUD (list with pagination + search, create, edit, view, delete)
 - Generate and display summary for a note
 - Environment-driven API base URL
@@ -15,7 +18,8 @@ This is the web React frontend for the multi-container Notes App. It provides:
 
 2) Configure environment
    cp .env.example .env
-   Edit .env and set REACT_APP_API_BASE_URL to your backend API (e.g., http://localhost:8000/api/v1). You may also set REACT_APP_API_DEBUG=true to log API calls for troubleshooting.
+   Edit .env and set REACT_APP_API_BASE_URL to your backend API (e.g., http://localhost:8000/api/v1).
+   Optional: set REACT_APP_API_DEBUG=true to log API calls for troubleshooting.
 
 3) Run the app
    npm start
@@ -25,11 +29,9 @@ This is the web React frontend for the multi-container Notes App. It provides:
 
 - REACT_APP_API_BASE_URL: Base URL of backend API, e.g., http://localhost:8000/api/v1
 - REACT_APP_API_DEBUG: If "true", logs API requests/responses to console in development
+- AUTH_ENABLED: Feature flag to guard auth code paths (false by default in this preview)
 
 ## API Endpoints (per OpenAPI)
-- POST /auth/register
-- POST /auth/login
-- POST /auth/logout
 - GET /notes?search=&page=&page_size=
 - POST /notes
 - GET /notes/{id}
@@ -39,8 +41,5 @@ This is the web React frontend for the multi-container Notes App. It provides:
 
 ## Notes
 
-- Tokens are stored in localStorage for persistence. On logout, token is cleared.
-- Axios interceptors attach Authorization header and handle 401 by redirecting to login.
+- Authentication is disabled in this build. The API client does not attach Authorization headers and does not redirect on 401.
 - UI is minimal and accessible.
-- Registration flow: after a successful POST /auth/register, the app automatically logs in the user and navigates to /notes. Validation errors from the backend are displayed inline.
-
