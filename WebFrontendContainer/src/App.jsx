@@ -1,260 +1,89 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
+import NoteForm from './components/NoteForm';
+import NotesList from './components/NotesList';
+import { getNotes } from './api';
 import './styles.css';
-import { createNote, summarizeNote } from './api';
-import { saveNoteToStorage, getNotesFromStorage, deleteNoteFromStorage } from './storage';
 
 /**
- * PUBLIC_INTERFACE
- * Main application component for the Notes App.
- * Provides functionality to create notes, generate summaries, save notes, and display saved notes.
- */
-function App() {
-  const [title, setTitle] = useState('');
-  const [content, setContent] = useState('');
-  const [summary, setSummary] = useState('');
+// PUBLIC_INTERFACE
+Component: App
+Single-page demo for creating notes, summarizing, saving, and listing without auth.
+*/
+export default function App() {
   const [notes, setNotes] = useState([]);
-  const [selectedNote, setSelectedNote] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [successMessage, setSuccessMessage] = useState('');
+  const [loadingList, setLoadingList] = useState(false);
 
-  // Load notes from localStorage on mount
+  const loadNotes = async () => {
+    setLoadingList(true);
+    try {
+      const list = await getNotes();
+      setNotes(Array.isArray(list) ? list : []);
+    } catch {
+      // fail silently; leave notes as-is
+    } finally {
+      setLoadingList(false);
+    }
+  };
+
   useEffect(() => {
-    const savedNotes = getNotesFromStorage();
-    setNotes(savedNotes);
+    loadNotes();
   }, []);
 
-  /**
-   * Generate summary for the current note content
-   */
-  const handleGenerateSummary = async () => {
-    if (!content.trim()) {
-      setError('Please enter some content before generating a summary.');
-      return;
-    }
-
-    setLoading(true);
-    setError('');
-    setSummary('');
-
-    try {
-      // Try to call backend API first
-      const result = await summarizeNote(content);
-      setSummary(result.summary);
-      setSuccessMessage('Summary generated successfully!');
-      setTimeout(() => setSuccessMessage(''), 3000);
-    } catch (err) {
-      console.warn('Backend summarization failed, using local fallback:', err);
-      // Fallback: simple local summarization (first 200 characters)
-      const localSummary = content.trim().substring(0, 200) + (content.length > 200 ? '...' : '');
-      setSummary(localSummary);
-      setSuccessMessage('Summary generated (local fallback)');
-      setTimeout(() => setSuccessMessage(''), 3000);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  /**
-   * Save the current note with its summary to localStorage
-   */
-  const handleSaveNote = async () => {
-    if (!title.trim() || !content.trim()) {
-      setError('Please enter both title and content before saving.');
-      return;
-    }
-
-    setLoading(true);
-    setError('');
-
-    try {
-      const noteData = {
-        title: title.trim(),
-        content: content.trim(),
-        summary: summary || 'No summary generated'
-      };
-
-      // Try to save to backend first
-      try {
-        await createNote(noteData);
-        console.log('Note saved to backend successfully');
-      } catch (backendError) {
-        console.warn('Backend save failed, saving locally only:', backendError);
-      }
-
-      // Always save to localStorage for offline access
-      const savedNote = saveNoteToStorage(noteData);
-      setNotes(getNotesFromStorage());
-      
-      // Reset form
-      setTitle('');
-      setContent('');
-      setSummary('');
-      setSuccessMessage('Note saved successfully!');
-      setTimeout(() => setSuccessMessage(''), 3000);
-    } catch (err) {
-      setError('Failed to save note: ' + err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  /**
-   * Select a note from the list to view its details
-   */
-  const handleSelectNote = (note) => {
-    setSelectedNote(note);
-    setError('');
-  };
-
-  /**
-   * Delete a note from the list
-   */
-  const handleDeleteNote = (noteId) => {
-    deleteNoteFromStorage(noteId);
-    setNotes(getNotesFromStorage());
-    if (selectedNote && selectedNote.id === noteId) {
-      setSelectedNote(null);
-    }
-    setSuccessMessage('Note deleted successfully!');
-    setTimeout(() => setSuccessMessage(''), 3000);
-  };
-
-  /**
-   * Close the note detail view
-   */
-  const handleCloseDetail = () => {
-    setSelectedNote(null);
+  const handleSaved = (note) => {
+    setNotes((prev) => [note, ...prev]);
   };
 
   return (
-    <div className="app-container">
-      <header className="app-header">
-        <h1>📝 Notes App</h1>
-        <p>Create notes and generate AI summaries</p>
+    <div style={styles.container}>
+      <header style={styles.header}>
+        <h1 style={styles.h1}>Notes Demo (No Auth)</h1>
+        <p style={styles.subtitle}>
+          Create a note, generate a quick summary, and save. Data persists locally for preview reliability.
+        </p>
       </header>
 
-      <main className="app-main">
-        {/* Note Creation Form */}
-        <section className="note-form-section">
-          <h2>Create New Note</h2>
-          
-          {error && <div className="error-message">{error}</div>}
-          {successMessage && <div className="success-message">{successMessage}</div>}
-
-          <div className="form-group">
-            <label htmlFor="title">Title:</label>
-            <input
-              id="title"
-              type="text"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="Enter note title"
-              disabled={loading}
-            />
-          </div>
-
-          <div className="form-group">
-            <label htmlFor="content">Content:</label>
-            <textarea
-              id="content"
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-              placeholder="Enter note content"
-              rows="8"
-              disabled={loading}
-            />
-          </div>
-
-          <div className="button-group">
-            <button 
-              onClick={handleGenerateSummary} 
-              disabled={loading || !content.trim()}
-              className="btn btn-primary"
-            >
-              {loading ? 'Generating...' : '✨ Generate Summary'}
-            </button>
-            <button 
-              onClick={handleSaveNote} 
-              disabled={loading || !title.trim() || !content.trim()}
-              className="btn btn-success"
-            >
-              {loading ? 'Saving...' : '💾 Save Note'}
+      <main style={styles.main}>
+        <NoteForm onSaved={handleSaved} />
+        <section style={styles.section}>
+          <div style={styles.sectionHeader}>
+            <h2 style={styles.h2}>Saved Notes</h2>
+            <button onClick={loadNotes} disabled={loadingList} style={styles.refreshBtn}>
+              {loadingList ? 'Refreshing…' : 'Refresh'}
             </button>
           </div>
-
-          {summary && (
-            <div className="summary-box">
-              <h3>Generated Summary:</h3>
-              <p>{summary}</p>
-            </div>
-          )}
-        </section>
-
-        {/* Notes List */}
-        <section className="notes-list-section">
-          <h2>Saved Notes ({notes.length})</h2>
-          
-          {notes.length === 0 ? (
-            <p className="empty-message">No notes saved yet. Create your first note above!</p>
-          ) : (
-            <div className="notes-list">
-              {notes.map((note) => (
-                <div key={note.id} className="note-item">
-                  <div className="note-item-content" onClick={() => handleSelectNote(note)}>
-                    <h3>{note.title}</h3>
-                    <p className="note-preview">
-                      {note.content.substring(0, 100)}
-                      {note.content.length > 100 ? '...' : ''}
-                    </p>
-                    <span className="note-date">
-                      {new Date(note.createdAt).toLocaleDateString()}
-                    </span>
-                  </div>
-                  <button 
-                    className="btn btn-delete"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleDeleteNote(note.id);
-                    }}
-                  >
-                    🗑️
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
+          <NotesList notes={notes} />
         </section>
       </main>
 
-      {/* Note Detail Modal */}
-      {selectedNote && (
-        <div className="modal-overlay" onClick={handleCloseDetail}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h2>{selectedNote.title}</h2>
-              <button className="btn-close" onClick={handleCloseDetail}>✕</button>
-            </div>
-            <div className="modal-body">
-              <div className="detail-section">
-                <h3>Content:</h3>
-                <p className="note-content">{selectedNote.content}</p>
-              </div>
-              <div className="detail-section">
-                <h3>Summary:</h3>
-                <p className="note-summary">{selectedNote.summary}</p>
-              </div>
-              <div className="detail-section">
-                <small className="note-metadata">
-                  Created: {new Date(selectedNote.createdAt).toLocaleString()}
-                </small>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      <footer style={styles.footer}>
+        <small>
+          Backend URL: {process.env.REACT_APP_BACKEND_URL ? process.env.REACT_APP_BACKEND_URL : 'not set (using local fallback)'}
+        </small>
+      </footer>
     </div>
   );
 }
 
-export default App;
+const styles = {
+  container: { maxWidth: 860, margin: '0 auto', padding: 16 },
+  header: { marginBottom: 12 },
+  h1: { margin: '0 0 6px 0', fontSize: 22 },
+  subtitle: { margin: 0, color: '#6b7280' },
+  main: { marginTop: 12 },
+  section: {
+    background: '#fff',
+    borderRadius: 8,
+    border: '1px solid #e5e7eb',
+    padding: 16,
+  },
+  sectionHeader: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 },
+  h2: { margin: 0, fontSize: 18 },
+  refreshBtn: {
+    padding: '6px 10px',
+    borderRadius: 6,
+    border: '1px solid #d1d5db',
+    background: '#f9fafb',
+    cursor: 'pointer',
+  },
+  footer: { marginTop: 16, color: '#6b7280', textAlign: 'center' },
+};
