@@ -5,15 +5,39 @@ import axios from "axios";
  * - Base URL from REACT_APP_API_BASE_URL
  * - Optional debug logging via REACT_APP_API_DEBUG
  * - Auth header support via setAuthToken
+ *
+ * Also provides in-app diagnostics when REACT_APP_API_DEBUG=true.
  */
-let rawBase = process.env.REACT_APP_API_BASE_URL || "http://localhost:8000/api/v1";
-// Normalize base URL to ensure it ends with /api/v1 per OpenAPI and no double slashes on join
-if (!/\/api\/v1\/?$/.test(rawBase)) {
-  // If caller provided host root, append /api/v1
-  rawBase = rawBase.replace(/\/+$/, "") + "/api/v1";
+const envBase = (process.env.REACT_APP_API_BASE_URL || "").trim();
+
+/**
+ * Normalize and validate base URL:
+ * - If missing, default to http://localhost:8000/api/v1 for dev, but mark as not configured.
+ * - Ensure it ends with /api/v1 and avoid trailing slash to keep paths consistent.
+ */
+function normalizeBaseUrl(input: string): { baseURL: string; configured: boolean } {
+  let configured = true;
+  let raw = input;
+  if (!raw) {
+    configured = false;
+    raw = "http://localhost:8000/api/v1";
+  }
+  // Strip trailing slashes
+  raw = raw.replace(/\/+$/, "");
+  // Append /api/v1 if not present at end
+  if (!/\/api\/v1$/.test(raw)) {
+    raw = raw + "/api/v1";
+  }
+  return { baseURL: raw, configured };
 }
-const baseURL = rawBase.replace(/\/+$/, ""); // no trailing slash to keep paths consistent
+
+const { baseURL, configured } = normalizeBaseUrl(envBase);
 const debug = (process.env.REACT_APP_API_DEBUG || "false").toLowerCase() === "true";
+
+if (debug) {
+  // eslint-disable-next-line no-console
+  console.info("[API] baseURL:", baseURL, "configured:", configured);
+}
 
 export const api = axios.create({
   baseURL,
@@ -22,23 +46,13 @@ export const api = axios.create({
   },
 });
 
-// PUBLIC_INTERFACE
-export function setAuthToken(token: string | null) {
-  /** Sets or clears Authorization bearer token on the axios instance and localStorage. */
-  if (token) {
-    api.defaults.headers.common["Authorization"] = `Bearer ${token}`;
-    localStorage.setItem("token", token);
-  } else {
-    delete api.defaults.headers.common["Authorization"];
-    localStorage.removeItem("token");
-  }
-}
-
+/**
+ * Attach Authorization header from localStorage token on each request.
+ * No withCredentials by default (CORS preflight friendly); enable only if backend requires cookies.
+ */
 api.interceptors.request.use((config) => {
-  // Ensure Authorization is present if token is stored
   try {
     const token = localStorage.getItem("token");
-    // Avoid assigning plain object to headers (breaks AxiosRequestHeaders type)
     const headers: Record<string, any> = (config.headers as any) || {};
     if (token && !headers.Authorization) {
       headers.Authorization = `Bearer ${token}`;
@@ -49,7 +63,11 @@ api.interceptors.request.use((config) => {
   }
   if (debug) {
     // eslint-disable-next-line no-console
-    console.log("[API REQ]", config.method?.toUpperCase(), (config.baseURL || "") + (config.url || ""), config.params || "", config.data || "");
+    console.log("[API REQ]", config.method?.toUpperCase(), (config.baseURL || "") + (config.url || ""), {
+      params: config.params,
+      data: config.data,
+      headers: config.headers,
+    });
   }
   return config;
 });
@@ -65,20 +83,46 @@ api.interceptors.response.use(
   (error) => {
     if (debug) {
       // eslint-disable-next-line no-console
-      console.error("[API ERR]", error?.response?.status, error?.response?.config?.url, error?.response?.data || error?.message);
+      console.error(
+        "[API ERR]",
+        error?.response?.status,
+        error?.response?.config?.url,
+        error?.response?.data || error?.message
+      );
     }
     return Promise.reject(error);
   }
 );
 
+// PUBLIC_INTERFACE
+export function setAuthToken(token: string | null) {
+  /** Sets or clears Authorization bearer token on the axios instance and localStorage. */
+  if (token) {
+    api.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+    localStorage.setItem("token", token);
+  } else {
+    delete api.defaults.headers.common["Authorization"];
+    localStorage.removeItem("token");
+  }
+}
+
 /**
  * Extracts a user-friendly error message from axios error responses that may follow
- * the OpenAPI ErrorResponse { code, message, details } shape or validation errors.
+ * OpenAPI ErrorResponse { code, message, details } or FastAPI-style 'detail'.
+ * Includes network errors and backend-unreachable guidance.
  */
 // PUBLIC_INTERFACE
 export function getApiErrorMessage(err: any, fallback = "Request failed.") {
+  // Network / no response
+  if (err?.code === "ERR_NETWORK" || !err?.response) {
+    if (!configured) {
+      return "Backend API is not configured. Set REACT_APP_API_BASE_URL in .env (e.g., http://localhost:8000/api/v1).";
+    }
+    return "Unable to reach the backend API. Check REACT_APP_API_BASE_URL and server availability.";
+  }
+
   const data = err?.response?.data;
-  if (!data) return fallback;
+  const status = err?.response?.status;
 
   const possible =
     data?.message ||
@@ -88,7 +132,9 @@ export function getApiErrorMessage(err: any, fallback = "Request failed.") {
       ? data.detail.map((d: any) => d?.msg || d).filter(Boolean).join(", ")
       : data?.detail);
 
-  if (possible && typeof possible === "string") return possible;
+  if (possible && typeof possible === "string") {
+    return possible;
+  }
 
   if (data?.errors && typeof data.errors === "object") {
     try {
@@ -99,6 +145,10 @@ export function getApiErrorMessage(err: any, fallback = "Request failed.") {
     } catch {
       /* ignore parsing issues */
     }
+  }
+
+  if (status && typeof status === "number") {
+    return `${fallback} (HTTP ${status})`;
   }
   return fallback;
 }
@@ -114,7 +164,20 @@ export async function listNotes(params: { page?: number; page_size?: number; sea
 // PUBLIC_INTERFACE
 export async function createNote(payload: { title: string; content: string }) {
   /** Calls POST /notes to create a note. */
-  const { data } = await api.post("/notes", payload);
+  if (!configured) {
+    const err: any = new Error("Backend API is not configured.");
+    err.uiMessage = "Backend API is not configured. Set REACT_APP_API_BASE_URL in .env and reload.";
+    throw err;
+  }
+  const { data, status } = await api.post("/notes", payload, {
+    headers: { "Content-Type": "application/json" },
+    // withCredentials: false // default; uncomment if backend needs cookies
+  });
+  // Accept 201 Created; if some backends return 200, still proceed.
+  if (status !== 201 && status !== 200) {
+    // eslint-disable-next-line no-console
+    console.warn("[createNote] Unexpected status:", status);
+  }
   return data;
 }
 
@@ -128,7 +191,9 @@ export async function getNote(id: string) {
 // PUBLIC_INTERFACE
 export async function updateNote(id: string, payload: { title: string; content: string }) {
   /** Calls PUT /notes/{id} to update a note. */
-  const { data } = await api.put(`/notes/${id}`, payload);
+  const { data } = await api.put(`/notes/${id}`, payload, {
+    headers: { "Content-Type": "application/json" },
+  });
   return data;
 }
 
@@ -149,7 +214,9 @@ export async function summarizeNote(id: string) {
 // PUBLIC_INTERFACE
 export async function login(email: string, password: string) {
   /** Calls POST /auth/login to authenticate and returns token payload. */
-  const { data } = await api.post("/auth/login", { email, password });
+  const { data } = await api.post("/auth/login", { email, password }, {
+    headers: { "Content-Type": "application/json" },
+  });
   const token = data?.access_token || data?.token || null;
   if (token) setAuthToken(token);
   return data;
@@ -158,7 +225,9 @@ export async function login(email: string, password: string) {
 // PUBLIC_INTERFACE
 export async function register(username: string, email: string, password: string) {
   /** Calls POST /auth/register to create an account. */
-  const { data } = await api.post("/auth/register", { username, email, password });
+  const { data } = await api.post("/auth/register", { username, email, password }, {
+    headers: { "Content-Type": "application/json" },
+  });
   return data;
 }
 
@@ -171,3 +240,14 @@ export async function logout() {
     setAuthToken(null);
   }
 }
+
+// PUBLIC_INTERFACE
+export const __API_DIAGNOSTICS__ = {
+  /** Provides diagnostics info for debugging in-app when REACT_APP_API_DEBUG=true. */
+  getInfo: () => ({
+    baseURL,
+    configured,
+    debug,
+    tokenPresent: !!localStorage.getItem("token"),
+  }),
+};

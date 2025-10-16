@@ -32,6 +32,14 @@ const NoteCreatePage: React.FC = () => {
       }
     } catch (e: any) {
       const msg = getApiErrorMessage ? getApiErrorMessage(e, "Failed to submit form.") : (e?.response?.data?.message || "Failed to submit form.");
+      // eslint-disable-next-line no-console
+      console.error("[NoteCreate] Create failed:", {
+        status: e?.response?.status,
+        statusText: e?.response?.statusText,
+        data: e?.response?.data,
+        url: e?.response?.config?.url,
+        message: e?.message,
+      });
       // Re-throw to let NoteForm show the message
       const err: any = new Error(msg);
       err.uiMessage = msg;

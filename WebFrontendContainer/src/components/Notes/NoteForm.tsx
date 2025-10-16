@@ -1,5 +1,6 @@
-import React, { useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
+import { __API_DIAGNOSTICS__ } from "../../services/api";
 
 type Props = {
   initial?: { title: string; content: string };
@@ -17,10 +18,33 @@ const NoteForm: React.FC<Props> = ({ initial = { title: "", content: "" }, onSub
   const contentError = content.trim().length === 0 ? "Content is required." : null;
   const hasErrors = !!titleError || !!contentError;
 
+  // Diagnostics from API (only logs if debug is enabled)
+  const diag = useMemo(() => {
+    try {
+      return __API_DIAGNOSTICS__?.getInfo?.() || { baseURL: "", configured: true, debug: false, tokenPresent: false };
+    } catch {
+      return { baseURL: "", configured: true, debug: false, tokenPresent: false };
+    }
+  }, []);
+
+  useEffect(() => {
+    if (diag?.debug) {
+      // eslint-disable-next-line no-console
+      console.info("[NoteForm Diagnostics]", diag);
+    }
+  }, [diag]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     if (hasErrors) return;
+
+    // If backend is not configured, stop early with actionable message.
+    if (diag && diag.configured === false) {
+      setError("Backend API not configured. Set REACT_APP_API_BASE_URL in .env (must end with /api/v1).");
+      return;
+    }
+
     setLoading(true);
     try {
       await onSubmit({ title: title.trim(), content: content.trim() });
@@ -42,6 +66,7 @@ const NoteForm: React.FC<Props> = ({ initial = { title: "", content: "" }, onSub
         status: e?.response?.status,
         statusText: e?.response?.statusText,
         data: e?.response?.data,
+        url: e?.response?.config?.url,
       });
       setError(msg);
     } finally {
@@ -84,11 +109,22 @@ const NoteForm: React.FC<Props> = ({ initial = { title: "", content: "" }, onSub
             {contentError && <div id="content-err" className="banner banner-error" style={{ marginTop: 8 }}>{contentError}</div>}
           </div>
 
+          {!diag?.configured && (
+            <div className="banner banner-error" role="alert">
+              Backend API is not configured. Set REACT_APP_API_BASE_URL in .env (e.g., http://localhost:8000/api/v1).
+            </div>
+          )}
+
           {error && <div className="banner banner-error" role="alert">{error}</div>}
 
           <div className="row-right">
             <Link to="/notes" className="btn">Cancel</Link>
-            <button type="submit" className="btn btn-primary" disabled={loading || hasErrors} aria-disabled={loading || hasErrors}>
+            <button
+              type="submit"
+              className="btn btn-primary"
+              disabled={loading || hasErrors || (diag && diag.configured === false)}
+              aria-disabled={loading || hasErrors || (diag && diag.configured === false)}
+            >
               {loading ? "Saving..." : submitLabel}
             </button>
           </div>
