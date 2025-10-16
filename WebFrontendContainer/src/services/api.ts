@@ -2,18 +2,35 @@ import axios from "axios";
 
 /**
  * Axios API client configured with:
- * - Base URL from REACT_APP_API_BASE_URL or fallback to http://localhost:3001/api/v1
+ * - Automatic environment detection (proxy vs absolute URL)
+ * - Base URL from REACT_APP_API_BASE_URL or relative proxy path
  * - Optional debug logging via REACT_APP_API_DEBUG
  * - Authorization header attachment when token exists
- * - Enhanced error handling with user-friendly messages
+ * - Enhanced error handling with user-friendly messages specifically for auth endpoints
  *
- * Dev note:
- * In production/preview, set REACT_APP_API_BASE_URL to the full backend URL including /api/v1.
- * In development, we use absolute URL to avoid CRA proxy conflicts.
+ * Environment modes:
+ * 1. Proxy mode (REACT_APP_USE_PROXY=true): Uses empty baseURL, CRA dev server proxies to backend
+ * 2. Absolute URL mode (default): Uses full backend URL from REACT_APP_API_BASE_URL
+ * 
+ * For preview environments, set REACT_APP_API_BASE_URL to match the backend preview URL.
  */
 const env = typeof process !== "undefined" ? process.env || {} : ({} as any);
-const baseURL: string = (env.REACT_APP_API_BASE_URL as string) || "http://localhost:3001/api/v1";
+
+// Check if proxy mode is enabled
+const useProxy: boolean = String(env.REACT_APP_USE_PROXY || "false").toLowerCase() === "true";
+
+// Determine base URL based on mode
+const baseURL: string = useProxy 
+  ? "" // Empty string for proxy mode - requests go to same origin
+  : (env.REACT_APP_API_BASE_URL as string) || "http://localhost:3001/api/v1";
+
 const debug: boolean = String(env.REACT_APP_API_DEBUG || "false").toLowerCase() === "true";
+
+if (debug) {
+  console.info(`[API CONFIG] Mode: ${useProxy ? "PROXY" : "ABSOLUTE_URL"}`);
+  console.info(`[API CONFIG] Base URL: ${baseURL || "(same-origin)"}`);
+  console.info(`[API CONFIG] Final resolved base: ${baseURL}`);
+}
 
 export const api = axios.create({
   baseURL,
@@ -31,8 +48,9 @@ api.interceptors.request.use((config) => {
   }
 
   if (debug) {
+    const fullUrl = config.baseURL ? `${config.baseURL}${config.url}` : config.url;
     // eslint-disable-next-line no-console
-    console.log("[API REQ]", config.method?.toUpperCase(), config.baseURL + config.url, config.params || "", config.data || "");
+    console.log("[API REQ]", config.method?.toUpperCase(), fullUrl, config.params || "", config.data || "");
   }
   return config;
 });
@@ -50,11 +68,31 @@ api.interceptors.response.use(
       // eslint-disable-next-line no-console
       console.error("[API ERR]", error.response?.status, error.response?.data || error.message);
     }
+    
     // Enhance error with user-friendly message
     if (error.response) {
+      // Server responded with error status
       error.uiMessage = getApiErrorMessage(error);
     } else if (error.request) {
-      error.uiMessage = "Network error. Please check your connection and ensure the backend is running.";
+      // Request made but no response received (network error)
+      const endpoint = error.config?.url || "unknown endpoint";
+      if (endpoint.includes("/auth/register")) {
+        error.uiMessage = "Cannot reach backend registration service. Please ensure Backend API is running and accessible.";
+      } else if (endpoint.includes("/auth/login")) {
+        error.uiMessage = "Cannot reach backend authentication service. Please ensure Backend API is running and accessible.";
+      } else {
+        error.uiMessage = "Network error. Please check your connection and ensure the backend is running.";
+      }
+      
+      // Log detailed network error for debugging
+      if (debug) {
+        console.error("[NETWORK ERROR]", {
+          endpoint,
+          baseURL,
+          useProxy,
+          message: error.message
+        });
+      }
     } else {
       error.uiMessage = "Request failed. Please try again.";
     }
@@ -88,6 +126,10 @@ export async function login(email: string, password: string) {
     }
     return data;
   } catch (err: any) {
+    // Add specific context for login errors
+    if (err.request && !err.response) {
+      err.uiMessage = "Cannot reach backend authentication service. Please ensure Backend API is running at " + (baseURL || "the configured URL") + ".";
+    }
     throw err;
   }
 }
@@ -115,6 +157,10 @@ export async function register(username: string, email: string, password: string
     const { data } = await api.post("/auth/register", { username, email, password });
     return data;
   } catch (err: any) {
+    // Add specific context for registration errors
+    if (err.request && !err.response) {
+      err.uiMessage = "Cannot reach backend registration service. Please ensure Backend API is running at " + (baseURL || "the configured URL") + ". Check that CORS is configured and the backend is accessible.";
+    }
     throw err;
   }
 }

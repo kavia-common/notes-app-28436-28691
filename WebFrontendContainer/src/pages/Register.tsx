@@ -13,17 +13,37 @@ const RegisterPage: React.FC = () => {
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (submitting) return; // Prevent double submission
+    
     setSubmitting(true);
     setError(null);
+    
     try {
       // Create account
       await register(username, email, password);
+      
       // Auto-login after successful registration
       await login(email, password);
+      
+      // Redirect to notes on success
       navigate("/notes", { replace: true });
     } catch (e: any) {
-      // Use enhanced error message from API client
-      const msg = e?.uiMessage || e?.response?.data?.message || "Registration failed. Please try again.";
+      // Use enhanced error message from API client with specific guidance
+      let msg = e?.uiMessage || e?.response?.data?.message || "Registration failed. Please try again.";
+      
+      // Add helpful context for network errors
+      if (e?.request && !e?.response) {
+        // Network error - backend not reachable
+        msg = e.uiMessage || "Cannot reach backend. Please ensure Backend API is running.";
+        
+        // Add technical details if available
+        const statusText = e?.request?.statusText;
+        if (statusText) {
+          msg += ` (${statusText})`;
+        }
+      }
+      
       setError(msg);
     } finally {
       setSubmitting(false);
@@ -49,6 +69,7 @@ const RegisterPage: React.FC = () => {
               onChange={(e) => setUsername(e.target.value)}
               placeholder="Choose a username"
               disabled={submitting}
+              autoComplete="username"
             />
           </div>
           
@@ -63,6 +84,7 @@ const RegisterPage: React.FC = () => {
               onChange={(e) => setEmail(e.target.value)}
               placeholder="your.email@example.com"
               disabled={submitting}
+              autoComplete="email"
             />
           </div>
           
@@ -78,6 +100,7 @@ const RegisterPage: React.FC = () => {
               placeholder="Choose a strong password"
               disabled={submitting}
               minLength={6}
+              autoComplete="new-password"
             />
             <small className="muted" style={{ display: "block", marginTop: 4 }}>
               At least 6 characters
@@ -95,6 +118,7 @@ const RegisterPage: React.FC = () => {
             className="btn btn-primary" 
             disabled={submitting}
             style={{ width: "100%" }}
+            aria-busy={submitting}
           >
             {submitting ? "Creating account..." : "Register"}
           </button>

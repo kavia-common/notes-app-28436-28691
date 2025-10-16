@@ -15,14 +15,29 @@ const LoginPage: React.FC = () => {
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (submitting) return; // Prevent double submission
+    
     setSubmitting(true);
     setError(null);
+    
     try {
       await login(email, password);
       navigate(from, { replace: true });
     } catch (e: any) {
       // Use enhanced error message from API client
-      const msg = e?.uiMessage || e?.response?.data?.message || "Login failed. Check your credentials.";
+      let msg = e?.uiMessage || e?.response?.data?.message || "Login failed. Check your credentials.";
+      
+      // Add helpful context for network errors
+      if (e?.request && !e?.response) {
+        msg = e.uiMessage || "Cannot reach backend. Please ensure Backend API is running.";
+        
+        const statusText = e?.request?.statusText;
+        if (statusText) {
+          msg += ` (${statusText})`;
+        }
+      }
+      
       setError(msg);
     } finally {
       setSubmitting(false);
@@ -49,6 +64,7 @@ const LoginPage: React.FC = () => {
               onChange={(e) => setEmail(e.target.value)}
               placeholder="your.email@example.com"
               disabled={submitting}
+              autoComplete="email"
             />
           </div>
           
@@ -63,6 +79,7 @@ const LoginPage: React.FC = () => {
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Enter your password"
               disabled={submitting}
+              autoComplete="current-password"
             />
           </div>
           
@@ -77,6 +94,7 @@ const LoginPage: React.FC = () => {
             className="btn btn-primary" 
             disabled={submitting}
             style={{ width: "100%" }}
+            aria-busy={submitting}
           >
             {submitting ? "Logging in..." : "Login"}
           </button>
