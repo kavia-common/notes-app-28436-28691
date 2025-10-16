@@ -16,12 +16,15 @@
     "start:backend": "REACT_APP_NO_AUTH=false PORT=3000 react-scripts start",
     "build": "react-scripts build",
     "build:noauth": "REACT_APP_NO_AUTH=true react-scripts build",
+    "build:prod": "REACT_APP_API_BASE_URL=$BACKEND_URL react-scripts build",
     "test": "CI=true react-scripts test --watchAll=false",
     "eject": "react-scripts eject",
     "lint": "eslint . --ext .js,.jsx --max-warnings=0 || true",
     "verify": "node verify-backend.js",
     "verify:bash": "bash test-api-connection.sh",
-    "verify:config": "node verify-config.js"
+    "verify:config": "node verify-config.js",
+    "clean": "rm -rf node_modules build package-lock.json",
+    "reinstall": "npm run clean && npm install --legacy-peer-deps"
   },
   "eslintConfig": {
     "extends": "react-app"

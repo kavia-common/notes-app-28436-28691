@@ -1,2 +1,2 @@
-import App from "./App.tsx";
+import App from "./App.jsx";
 export default App;
