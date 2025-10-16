@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { getNote, summarizeNote } from "../../services/api";
 import { useParams } from "react-router-dom";
+import type { Note } from "types";
 
 type Props = {
   onError: (msg: string) => void;

@@ -11,7 +11,9 @@
     "noEmit": true,
     "strict": false,
     "baseUrl": "src",
-    "types": ["node", "jest"]
+    "types": ["node", "jest"],
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true
   },
   "include": ["src"]
 }

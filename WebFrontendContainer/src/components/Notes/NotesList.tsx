@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { listNotes, deleteNote } from "../../services/api";
+import type { Note } from "types";
 
 type Props = {
   onError: (msg: string) => void;

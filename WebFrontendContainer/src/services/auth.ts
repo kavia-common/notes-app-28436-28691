@@ -1,7 +1,10 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { login as apiLogin, logout as apiLogout, register as apiRegister, setAuthToken } from "./api";
 
-type AuthContextType = {
+/** PUBLIC_INTERFACE
+ * AuthContextType describes what the AuthProvider exposes to consumers.
+ */
+export type AuthContextType = {
   token: string | null;
   isAuthenticated: boolean;
   // PUBLIC_INTERFACE
@@ -12,9 +15,12 @@ type AuthContextType = {
   register: (username: string, email: string, password: string) => Promise<void>;
 };
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+// Use a short alias name to prevent any TSX namespace confusion.
+const AuthCtx = createContext<AuthContextType | undefined>(undefined);
 
+// PUBLIC_INTERFACE
 export function AuthProvider({ children }: { children: React.ReactNode }) {
+  /** React Provider for authentication state and actions. */
   const [token, setToken] = useState<string | null>(localStorage.getItem("token"));
 
   useEffect(() => {
@@ -22,21 +28,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [token]);
 
   const login = useCallback(async (email: string, password: string) => {
-    try {
-      const data = await apiLogin(email, password);
-      const access = data?.access_token || data?.token;
-      setToken(access || null);
-    } catch (e) {
-      throw e;
-    }
+    const data = await apiLogin(email, password);
+    const access = (data as any)?.access_token || (data as any)?.token;
+    setToken(access || null);
   }, []);
 
   const register = useCallback(async (username: string, email: string, password: string) => {
-    try {
-      await apiRegister(username, email, password);
-    } catch (e) {
-      throw e;
-    }
+    await apiRegister(username, email, password);
   }, []);
 
   const logout = useCallback(async () => {
@@ -44,7 +42,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setToken(null);
   }, []);
 
-  const value = useMemo(
+  const value: AuthContextType = useMemo(
     () => ({
       token,
       isAuthenticated: !!token,
@@ -55,13 +53,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     [token, login, logout, register]
   );
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return React.createElement(AuthCtx.Provider, { value }, children);
 }
 
 // PUBLIC_INTERFACE
-export function useAuth() {
+export function useAuth(): AuthContextType {
   /** Hook to access auth context. */
-  const ctx = useContext(AuthContext);
+  const ctx = useContext(AuthCtx);
   if (!ctx) throw new Error("useAuth must be used within AuthProvider");
   return ctx;
 }

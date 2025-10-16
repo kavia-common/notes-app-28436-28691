@@ -1,3 +1,8 @@
+/**
+ * Shared TypeScript interfaces for the app.
+ * Import from "types" (baseUrl points to src).
+ */
+
 export interface User {
   id: string;
   username: string;
@@ -32,3 +37,6 @@ export interface PaginatedNotesParams {
   page_size?: number;
   search?: string;
 }
+
+// PUBLIC_INTERFACE
+export type { Note as default };
