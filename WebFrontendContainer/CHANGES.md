@@ -4,15 +4,35 @@ This document summarizes all changes made to align the frontend with the backend
 
 ## Overview
 
-The frontend has been updated to properly connect to the backend API running on port 3001 with base path `/api/v1`. All authentication flows, CORS handling, error messages, and form submissions have been fixed. **NEW:** Added support for preview environments with automatic detection and proxy mode.
+The frontend has been updated to properly connect to the backend API running on port 3001 with base path `/api/v1`. All authentication flows, CORS handling, error messages, and form submissions have been fixed. **NEW:** Added support for preview environments with automatic detection, proxy mode, and comprehensive backend health checking.
 
-## Latest Updates (Preview Environment Support)
+## Latest Updates (Preview Environment Support & Health Checks)
 
-### Preview Environment Detection
+### Backend Health Monitoring
+- **NEW:** Added `BackendHealthCheck` component for runtime backend availability verification
+- Displays clear, actionable error messages when backend is unreachable
+- Shows backend URL, troubleshooting steps, and retry functionality
+- Provides detailed network diagnostics in error states
+- Automatically checks backend health on component mount
+
+### Enhanced Error Messages
+- Registration/login forms now show detailed troubleshooting information on network errors
+- Error messages include backend URL, CORS guidance, and connectivity steps
+- Multi-line formatted error display with proper whitespace handling
+- Technical details (status, URL) included when available for debugging
+
+### Preview Environment Configuration
 - API client now supports both **proxy mode** (relative URLs) and **absolute URL mode**
 - Automatically detects environment via `REACT_APP_USE_PROXY` flag
 - Enhanced error messages specifically for `/auth/register` and `/auth/login` endpoints
 - Added runtime logging when `REACT_APP_API_DEBUG=true` to show resolved URLs
+- Updated `.env` to use preview backend URL: `https://vscode-internal-14543-qa.qa01.cloud.kavia.ai:3001/api/v1`
+
+### Configuration Clarity
+- **NEW:** Clear distinction between absolute URL mode (recommended for preview) and proxy mode
+- Updated README with specific guidance for preview environment setup
+- Added troubleshooting section for common preview issues
+- Documented CORS requirements for preview domains
 
 ### Proxy Mode Configuration
 - Added `"proxy": "http://localhost:3001"` to `package.json` for CRA dev server
@@ -22,17 +42,22 @@ The frontend has been updated to properly connect to the backend API running on 
 
 ### Error Handling Improvements
 - Network errors now show: "Cannot reach backend. Please ensure Backend API is running."
-- Registration errors include backend URL and CORS guidance
+- Registration errors include backend URL and CORS guidance with troubleshooting steps
 - Added status text display when available from request object
 - Form submit buttons properly disabled during submission to prevent double-submit
+- Error banners support multi-line formatting with `whiteSpace: "pre-wrap"`
 
 ### Updated Files
 - `src/services/api.ts` - Added proxy mode detection and enhanced error context
+- `src/components/BackendHealthCheck.tsx` - **NEW:** Health check component with retry logic
+- `src/components/withBackendCheck.tsx` - **NEW:** HOC for wrapping components with health check
 - `package.json` - Added proxy field for preview environments
+- `.env` - Updated to use preview backend URL
 - `.env.example` - Comprehensive guide for proxy vs absolute URL modes
 - `.env.development` - Preview-specific guidance with commented examples
-- `src/pages/Register.tsx` - Improved error display and button states
-- `src/pages/Login.tsx` - Matching error handling improvements
+- `src/pages/Register.tsx` - Enhanced error display with detailed troubleshooting
+- `src/pages/Login.tsx` - Matching error handling improvements with troubleshooting
+- `README.md` - **NEW:** Clear preview configuration section with mode comparison
 
 ## Changes Made
 
@@ -47,6 +72,7 @@ The frontend has been updated to properly connect to the backend API running on 
 - **NEW:** Specific error messages for `/auth/register` and `/auth/login` endpoints
 - Added request/response interceptors for debugging
 - Fixed all API endpoints to match OpenAPI spec
+- **NEW:** Network error messages include backend URL for troubleshooting
 
 **Why:**
 - Backend requires `/api/v1` prefix on all endpoints
@@ -54,6 +80,7 @@ The frontend has been updated to properly connect to the backend API running on 
 - JWT tokens must be sent in Authorization header
 - Users need clear error messages, especially about backend connectivity
 - Supports both development and production deployment scenarios
+- **NEW:** Troubleshooting guidance helps users diagnose connection issues
 
 ### 2. Authentication Service (`src/services/auth.ts` & `.jsx`)
 
@@ -71,23 +98,25 @@ The frontend has been updated to properly connect to the backend API running on 
 ### 3. Environment Configuration
 
 **Files updated:**
+- `.env` - **NEW:** Updated to use preview backend URL
 - `.env.example` - **NEW:** Complete guide for proxy vs absolute URL modes
-- `.env` - Created with default backend URL
 - `.env.development` - **NEW:** Preview-specific guidance with backend URL examples
 
 **What changed:**
-- Set `REACT_APP_API_BASE_URL=http://localhost:3001/api/v1`
+- **NEW:** Set `REACT_APP_API_BASE_URL=https://vscode-internal-14543-qa.qa01.cloud.kavia.ai:3001/api/v1`
+- **NEW:** Enabled `REACT_APP_API_DEBUG=true` for troubleshooting
 - **NEW:** Added `REACT_APP_USE_PROXY` flag for proxy mode
-- **NEW:** Added `REACT_APP_API_DEBUG` for troubleshooting preview issues
 - Added clear comments explaining each variable and mode
 - Documented production deployment requirements
 - **NEW:** Preview environment configuration examples
+- **NEW:** Clear mode comparison (absolute URL vs proxy)
 
 **Why:**
 - React requires `REACT_APP_` prefix for custom env vars
 - `/api/v1` path is mandatory for backend routes
 - Preview environments need HOST and DANGEROUSLY_DISABLE_HOST_CHECK
 - Proxy mode avoids CORS issues in certain deployment scenarios
+- **NEW:** Users need clear guidance on which mode to use
 
 ### 4. Package Configuration (`package.json`)
 
@@ -129,10 +158,12 @@ The frontend has been updated to properly connect to the backend API running on 
 
 **What changed:**
 - Enhanced styling with card layout
-- **NEW:** Better error message display with backend connectivity context
+- **NEW:** Detailed error message display with backend connectivity context and troubleshooting
 - **NEW:** Form validation and disabled states during submission
 - **NEW:** Prevent double-submit by disabling button while processing
 - **NEW:** Added autocomplete attributes for better UX
+- **NEW:** Multi-line error display with troubleshooting guidance
+- **NEW:** Network errors show backend URL and actionable steps
 - Auto-login after successful registration
 
 **Why:**
@@ -140,23 +171,27 @@ The frontend has been updated to properly connect to the backend API running on 
 - Clear error feedback from backend with actionable guidance
 - Prevent accidental double submissions
 - Seamless flow from register to notes
+- **NEW:** Users need clear guidance when backend is unavailable
 
 ### 8. Documentation
 
 **New files:**
-- `README.md` - Updated with backend API requirements
+- `README.md` - **NEW:** Updated with preview configuration section
 - `README-NOTES-APP.md` - Complete feature documentation
 - `SETUP-GUIDE.md` - Step-by-step setup instructions
 - `INTEGRATION-CHECKLIST.md` - Verification checklist
-- `CHANGES.md` - This file (**updated with preview support**)
+- `CHANGES.md` - This file (**updated with health check and preview support**)
 - `verify-backend.js` - Node.js connectivity test
 - `test-api-connection.sh` - Bash connectivity test
+- `src/components/BackendHealthCheck.tsx` - **NEW:** Health check component
+- `src/components/withBackendCheck.tsx` - **NEW:** HOC for health checking
 
 **Why:**
 - Clear instructions for setup and troubleshooting
 - Verification tools to ensure backend connectivity
 - Comprehensive integration checklist
 - **NEW:** Guide for preview environment configuration
+- **NEW:** Runtime health checking for better UX
 
 ## API Endpoint Mapping
 
@@ -188,6 +223,7 @@ The frontend now properly handles these error scenarios:
 - **Message:** "Cannot reach backend. Please ensure Backend API is running."
 - **NEW:** Includes endpoint-specific context (registration vs login vs notes)
 - **NEW:** Shows backend URL when available for debugging
+- **NEW:** Provides detailed troubleshooting steps including CORS guidance
 
 ### Authentication Errors (401)
 - **Cause:** Invalid or missing token
@@ -206,17 +242,16 @@ The frontend now properly handles these error scenarios:
 
 ## Configuration Modes
 
-### Mode 1: Absolute URL (Default)
+### Mode 1: Absolute URL (Recommended for Preview)
 ```env
-REACT_APP_API_BASE_URL=http://localhost:3001/api/v1
-# or for preview:
-REACT_APP_API_BASE_URL=https://preview-backend.example.com/api/v1
+REACT_APP_API_BASE_URL=https://vscode-internal-14543-qa.qa01.cloud.kavia.ai:3001/api/v1
 ```
 
 **Use when:**
 - Backend is on different domain/port
 - CORS is properly configured on backend
-- Production deployments
+- Preview/production deployments
+- **Easier troubleshooting with explicit URLs**
 
 ### Mode 2: Proxy (Alternative)
 ```env
@@ -233,7 +268,7 @@ REACT_APP_USE_PROXY=true
 
 For the frontend to communicate with the backend, the backend must:
 
-1. Allow origin: `http://localhost:3000` (development) or preview URL
+1. Allow origin: `https://vscode-internal-14543-qa.qa01.cloud.kavia.ai:3000` (preview) or `http://localhost:3000` (local)
 2. Allow methods: `GET, POST, PUT, DELETE, OPTIONS`
 3. Allow headers: `Content-Type, Authorization`
 4. Allow credentials: `true`
@@ -244,7 +279,10 @@ from fastapi.middleware.cors import CORSMiddleware
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "https://preview-frontend.example.com"],
+    allow_origins=[
+        "http://localhost:3000",
+        "https://vscode-internal-14543-qa.qa01.cloud.kavia.ai:3000"
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -261,7 +299,7 @@ npm run verify
 # 2. Start frontend
 npm start
 
-# 3. Open http://localhost:3000
+# 3. Open https://vscode-internal-14543-qa.qa01.cloud.kavia.ai:3000
 # 4. Click "Register" and create account
 # 5. Login with new credentials
 # 6. Create a note
@@ -270,17 +308,18 @@ npm start
 
 ### Preview Environment Test
 ```bash
-# 1. Set backend URL in .env or .env.development
-echo "REACT_APP_API_BASE_URL=https://your-backend-preview.com/api/v1" >> .env
+# 1. Backend URL already set in .env
+cat .env
 
-# 2. Enable debug logging
-echo "REACT_APP_API_DEBUG=true" >> .env
+# 2. Debug logging already enabled
+# Check browser console for resolved URL
 
 # 3. Start and check browser console for resolved URL
 npm start
 
 # 4. Test registration with network tab open
 # 5. Check console logs show correct backend URL
+# 6. If backend unavailable, see clear error with troubleshooting steps
 ```
 
 ### Complete Test
@@ -302,7 +341,7 @@ Follow the checklist in `INTEGRATION-CHECKLIST.md`
 ### Backend not responding
 ```bash
 # Check if backend is running
-curl http://localhost:3001/health
+curl https://vscode-internal-14543-qa.qa01.cloud.kavia.ai:3001/health
 
 # If not, start the backend
 cd ../BackendAPIContainer
@@ -313,6 +352,7 @@ cd ../BackendAPIContainer
 - Verify backend CORS allows frontend origin (check preview URL)
 - Check browser Network tab for CORS headers
 - Ensure backend includes `Access-Control-Allow-Origin` header
+- **NEW:** Error messages now include CORS troubleshooting guidance
 
 ### Authentication not working
 - Check localStorage for token
@@ -325,14 +365,15 @@ cd ../BackendAPIContainer
 - Check browser console for resolved base URL
 - Verify request payload matches OpenAPI spec
 - Check backend logs for errors
-- **NEW:** Verify backend URL matches preview environment
+- **NEW:** Error messages show backend URL and troubleshooting steps
 - **NEW:** Try proxy mode if CORS is causing issues
 
 ### Preview environment issues
-- Check `.env.development` has correct backend URL
+- Check `.env` has correct backend preview URL
 - Enable debug logging to see resolved URLs
 - Verify backend is accessible from preview domain
 - Consider using proxy mode if same-origin
+- **NEW:** Health check component will show clear error with guidance
 
 ## Success Criteria
 
@@ -346,8 +387,10 @@ The integration is successful when:
 - [ ] Error messages are user-friendly and actionable
 - [ ] No CORS errors in console
 - [ ] Authorization header sent on all authenticated requests
-- [ ] **NEW:** Registration shows helpful error when backend unavailable
+- [ ] **NEW:** Registration shows helpful error when backend unavailable with troubleshooting
 - [ ] **NEW:** Debug mode shows resolved API base URL
+- [ ] **NEW:** Health check component displays on backend failure
+- [ ] **NEW:** Error messages include backend URL and CORS guidance
 
 ## Next Steps
 

@@ -17,7 +17,8 @@
     "eject": "react-scripts eject",
     "lint": "eslint . --ext .js,.jsx --max-warnings=0 || true",
     "verify": "node verify-backend.js",
-    "verify:bash": "bash test-api-connection.sh"
+    "verify:bash": "bash test-api-connection.sh",
+    "verify:config": "node verify-config.js"
   },
   "eslintConfig": {
     "extends": "react-app"

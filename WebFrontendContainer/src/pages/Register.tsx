@@ -35,12 +35,16 @@ const RegisterPage: React.FC = () => {
       // Add helpful context for network errors
       if (e?.request && !e?.response) {
         // Network error - backend not reachable
-        msg = e.uiMessage || "Cannot reach backend. Please ensure Backend API is running.";
+        msg = e.uiMessage || "Cannot reach backend registration service.";
+        
+        // Add detailed troubleshooting info
+        const backendUrl = e?.config?.baseURL || "the configured backend URL";
+        msg += `\n\n🔧 Troubleshooting:\n• Backend URL: ${backendUrl}\n• Ensure Backend API Container is running\n• Check CORS configuration\n• Verify network connectivity`;
         
         // Add technical details if available
         const statusText = e?.request?.statusText;
         if (statusText) {
-          msg += ` (${statusText})`;
+          msg += `\n• Status: ${statusText}`;
         }
       }
       
@@ -108,7 +112,7 @@ const RegisterPage: React.FC = () => {
           </div>
           
           {error && (
-            <div className="banner banner-error" role="alert">
+            <div className="banner banner-error" role="alert" style={{ whiteSpace: "pre-wrap" }}>
               {error}
             </div>
           )}
