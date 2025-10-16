@@ -1,6 +1,30 @@
 # WebFrontendContainer (Notes App)
 
-A lightweight React app with a polished, responsive UI for managing notes with authentication.
+A lightweight React app with a polished, responsive UI for managing notes with optional authentication.
+
+## No-Auth Mode (NEW)
+
+The app now supports a **no-auth mode** that allows you to use all features without backend authentication:
+
+- ✅ Notes stored in localStorage (persists across sessions)
+- ✅ Import notes from .txt or .md files
+- ✅ Client-side summarization using simple heuristics
+- ✅ Full CRUD operations without login
+- ✅ Search and pagination support
+
+### Enable No-Auth Mode
+
+1. Set the environment variable:
+   ```bash
+   REACT_APP_NO_AUTH=true
+   ```
+
+2. Start the app:
+   ```bash
+   npm start
+   ```
+
+3. Access at http://localhost:3000 - you'll go directly to the notes interface!
 
 ## Run locally
 
@@ -14,19 +38,15 @@ A lightweight React app with a polished, responsive UI for managing notes with a
    cp .env.example .env
    ```
    
-   **IMPORTANT:** Edit `.env` and set the backend API URL:
-   ```
-   REACT_APP_API_BASE_URL=http://localhost:3001/api/v1
+   **For no-auth mode (recommended for preview):**
+   ```env
+   REACT_APP_NO_AUTH=true
    ```
    
-   For preview/production environments, use the actual backend URL:
-   ```
-   REACT_APP_API_BASE_URL=https://vscode-internal-14543-qa.qa01.cloud.kavia.ai:3001/api/v1
-   ```
-
-   Optional debug logging:
-   ```
-   REACT_APP_API_DEBUG=true
+   **For backend mode:**
+   ```env
+   REACT_APP_NO_AUTH=false
+   REACT_APP_API_BASE_URL=http://localhost:3001/api/v1
    ```
 
 3) Start the dev server
@@ -35,141 +55,88 @@ A lightweight React app with a polished, responsive UI for managing notes with a
    ```
    App runs at http://localhost:3000
 
-## Preview/Container environments
+## Features
 
-If you access the CRA dev server via a preview domain or reverse proxy and see "Invalid Host header":
+### No-Auth Mode
+- Direct access to notes interface
+- Import notes from files (.txt, .md)
+- Local storage persistence
+- Client-side summarization
+- No backend required
 
-- Use the provided `.env.development` which includes:
-  - `HOST=0.0.0.0` (bind to all interfaces)
-  - `DANGEROUSLY_DISABLE_HOST_CHECK=true` (allow preview host)
-- If hot reloading behaves inconsistently, you can also set `FAST_REFRESH=false`.
-
-Commands:
-- `npm start` will pick up `.env.development` automatically in development mode.
-
-Security note: These flags apply to development only and should not be used in production builds.
+### Backend Mode (when REACT_APP_NO_AUTH=false)
+- Full authentication with JWT
+- Backend API integration
+- AI-powered summarization
+- Multi-user support
 
 ## Configuration Modes
 
-### Mode 1: Absolute URL (Recommended for Preview)
+### Mode 1: No-Auth Mode (Recommended for Preview)
 
-Set the full backend URL in `.env`:
+Set in `.env`:
 ```env
+REACT_APP_NO_AUTH=true
+```
+
+**Use when:**
+- Testing without backend
+- Demo/preview environments
+- Local development without backend setup
+- Want to try features quickly
+
+### Mode 2: Backend Mode
+
+Set in `.env`:
+```env
+REACT_APP_NO_AUTH=false
 REACT_APP_API_BASE_URL=https://vscode-internal-14543-qa.qa01.cloud.kavia.ai:3001/api/v1
 ```
 
 **Use when:**
-- Backend is on different domain/port
-- Preview environment with separate services
-- Production deployments
+- Backend is available
+- Need authentication
+- Want AI summarization
+- Production deployment
 
-### Mode 2: Proxy Mode (Alternative)
+## Preview/Container environments
 
-Enable proxy mode in `.env`:
-```env
-REACT_APP_USE_PROXY=true
-```
+If you access the CRA dev server via a preview domain or reverse proxy:
 
-The `package.json` already has `"proxy": "http://localhost:3001"` configured.
+- Use the provided `.env` which includes:
+  - `HOST=0.0.0.0` (bind to all interfaces)
+  - `DANGEROUSLY_DISABLE_HOST_CHECK=true` (allow preview host)
+  - `REACT_APP_NO_AUTH=true` (no-auth mode enabled)
 
-**Use when:**
-- Backend and frontend on same domain
-- Want to avoid CORS configuration
-- Local development with both services running
+## Import Notes Feature
 
-**Note:** For preview environments, absolute URL mode is preferred as it's more explicit and easier to troubleshoot.
+In no-auth mode, you can import notes from files:
 
-## Backend API Connection
+1. Click "Import File" button on the home page
+2. Select a .txt or .md file
+3. The file name becomes the note title
+4. The file content becomes the note content
+5. Note is saved to localStorage
 
-The frontend connects to the backend API at the URL specified in `REACT_APP_API_BASE_URL`. 
+## Local Summarization
 
-**Expected backend endpoints:**
-- `POST /api/v1/auth/register` - Register new user
-- `POST /api/v1/auth/login` - Login and get JWT token
-- `POST /api/v1/auth/logout` - Logout
-- `GET /api/v1/notes` - List notes (with pagination/search)
-- `POST /api/v1/notes` - Create note
-- `GET /api/v1/notes/{id}` - Get note
-- `PUT /api/v1/notes/{id}` - Update note
-- `DELETE /api/v1/notes/{id}` - Delete note
-- `POST /api/v1/notes/{id}/summarize` - Generate summary
-
-All authenticated endpoints require `Authorization: Bearer <token>` header, which is automatically added by the API client when a user is logged in.
-
-## CORS Configuration
-
-The backend must allow CORS from the frontend origin:
-
-**Development:**
-- Frontend: http://localhost:3000
-- Backend: http://localhost:3001
-
-**Preview:**
-- Frontend: https://vscode-internal-14543-qa.qa01.cloud.kavia.ai:3000
-- Backend: https://vscode-internal-14543-qa.qa01.cloud.kavia.ai:3001
-
-Ensure the backend CORS middleware allows the frontend origin and includes:
-- `Access-Control-Allow-Origin: <frontend-url>`
-- `Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS`
-- `Access-Control-Allow-Headers: Content-Type, Authorization`
-- `Access-Control-Allow-Credentials: true`
-
-## Troubleshooting
-
-### Backend Not Responding
-
-The app includes a built-in health check that will display a clear error message if the backend is unavailable:
-
-- **Error message:** Shows exactly what URL is being used and why connection failed
-- **Troubleshooting steps:** Provides actionable guidance
-- **Retry option:** Allows users to retry connection after fixing issues
-
-If you see "Cannot reach backend":
-1. Verify backend is running: `curl https://vscode-internal-14543-qa.qa01.cloud.kavia.ai:3001/health`
-2. Check `.env` file has correct `REACT_APP_API_BASE_URL`
-3. Ensure backend CORS allows the frontend origin
-4. Verify network connectivity and firewall rules
-
-### CORS Errors
-
-If you see CORS errors in the browser console:
-- Verify backend CORS allows `https://vscode-internal-14543-qa.qa01.cloud.kavia.ai:3000`
-- Check browser Network tab for CORS headers in response
-- Ensure backend includes proper `Access-Control-Allow-*` headers
-
-### Registration/Login Fails
-
-1. Open browser DevTools > Network tab
-2. Try submitting the form
-3. Check the request details:
-   - URL should be: `https://vscode-internal-14543-qa.qa01.cloud.kavia.ai:3001/api/v1/auth/register`
-   - Method should be: POST
-   - Body should include: `{ username, email, password }`
-4. Check response status and error message
-5. Enable debug mode: Set `REACT_APP_API_DEBUG=true` in `.env` and restart
-
-### "Invalid Host header" in preview
-
-- Make sure `.env.development` has `DANGEROUSLY_DISABLE_HOST_CHECK=true`
-- Verify `HOST=0.0.0.0` is set
-- Restart dev server
+In no-auth mode, summarization uses simple heuristics:
+- Extracts first 3 sentences, or
+- Truncates to 150 characters
+- Click "Generate Summary" on any note
 
 ## Environment Variables
 
-- `REACT_APP_API_BASE_URL`: **Required** - Base URL of backend API (must include `/api/v1` path)
-- `REACT_APP_USE_PROXY`: Enable proxy mode (uses relative paths)
-- `REACT_APP_API_DEBUG`: Enable verbose API logging (helpful for troubleshooting)
-- `HOST`: Dev server bind address (use `0.0.0.0` for containers)
-- `DANGEROUSLY_DISABLE_HOST_CHECK`: Allow access via preview domains (dev only)
-- `FAST_REFRESH`: Enable/disable hot reload
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `REACT_APP_NO_AUTH` | `false` | Enable no-auth mode (localStorage) |
+| `REACT_APP_API_BASE_URL` | `http://localhost:3001/api/v1` | Backend API URL (backend mode only) |
+| `REACT_APP_USE_PROXY` | `false` | Enable proxy mode (backend mode only) |
+| `REACT_APP_API_DEBUG` | `false` | Enable verbose logging |
+| `HOST` | `localhost` | Dev server bind address |
+| `DANGEROUSLY_DISABLE_HOST_CHECK` | `false` | Allow preview domains |
 
 ## Testing
-
-The frontend expects:
-1. Backend running on the URL specified in `REACT_APP_API_BASE_URL`
-2. CORS properly configured on backend
-3. JWT authentication working
-4. All CRUD endpoints returning expected response formats per OpenAPI spec
 
 Run tests with:
 ```bash
@@ -187,12 +154,32 @@ npm run lint
 npm run build
 ```
 
-The build output will be in the `build/` directory, ready for deployment to any static hosting service.
+The build output will be in the `build/` directory.
 
-Remember to:
-- Set `REACT_APP_API_BASE_URL` to production backend URL
-- Ensure backend CORS allows production frontend origin
-- Use HTTPS for all communications
-- Verify JWT tokens have appropriate expiry times
+For no-auth mode deployment:
+- Set `REACT_APP_NO_AUTH=true` during build
+- All data stored client-side
+- No backend required
 
-Refer to README-NOTES-APP.md for more details about features and UI/UX.
+For backend mode deployment:
+- Set `REACT_APP_NO_AUTH=false`
+- Set `REACT_APP_API_BASE_URL` to production URL
+- Ensure CORS configured on backend
+
+## Troubleshooting
+
+### Notes not persisting?
+- Check browser localStorage is enabled
+- Try clearing localStorage: `localStorage.clear()` in console
+
+### Import not working?
+- Ensure file is .txt or .md format
+- Check file size (very large files may fail)
+- Verify no-auth mode is enabled
+
+### Features not working?
+- Verify `REACT_APP_NO_AUTH=true` in .env
+- Restart dev server after changing .env
+- Clear browser cache
+
+Refer to CHANGES.md for detailed technical documentation.

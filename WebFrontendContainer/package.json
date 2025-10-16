@@ -12,7 +12,10 @@
   },
   "scripts": {
     "start": "PORT=3000 react-scripts start",
+    "start:noauth": "REACT_APP_NO_AUTH=true PORT=3000 react-scripts start",
+    "start:backend": "REACT_APP_NO_AUTH=false PORT=3000 react-scripts start",
     "build": "react-scripts build",
+    "build:noauth": "REACT_APP_NO_AUTH=true react-scripts build",
     "test": "CI=true react-scripts test --watchAll=false",
     "eject": "react-scripts eject",
     "lint": "eslint . --ext .js,.jsx --max-warnings=0 || true",
