@@ -15,12 +15,12 @@ A polished, lightweight React UI for managing notes without authentication (prev
 
 2) Configure environment
    cp .env.example .env
-   # Required:
-   # REACT_APP_API_BASE_URL=http://localhost:8000/api/v1
    # Optional:
+   # REACT_APP_API_BASE_URL=http://localhost:3001
    # REACT_APP_API_DEBUG=true
 
-   Edit .env and set REACT_APP_API_BASE_URL to your backend API (e.g., http://localhost:8000/api/v1).
+   If not set, the app uses CRA proxy to http://localhost:3001 for relative API calls during development.
+   Edit .env and set REACT_APP_API_BASE_URL if you need an absolute URL (e.g., deployed backend).
 
 3) Run the app
    npm start

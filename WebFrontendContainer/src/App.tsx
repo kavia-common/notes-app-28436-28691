@@ -10,8 +10,9 @@ import "./App.css";
 
 /**
  * Root Application component with public routes only (auth disabled).
+ * BrowserRouter lives here; CRA dev server proxies API calls via package.json.
  */
-function App() {
+function App(): JSX.Element {
   return (
     <BrowserRouter>
       <Header />

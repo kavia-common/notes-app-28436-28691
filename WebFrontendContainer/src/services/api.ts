@@ -5,12 +5,17 @@ import axios from "axios";
  * - Base URL from REACT_APP_API_BASE_URL
  * - Optional debug logging via REACT_APP_API_DEBUG
  * - No authentication headers or redirects (auth disabled)
+ *
+ * Dev note:
+ * If REACT_APP_API_BASE_URL is not set, we rely on CRA proxy (package.json "proxy") so relative paths
+ * will be forwarded to http://localhost:3001 to avoid CORS during development.
  */
-const baseURL = process.env.REACT_APP_API_BASE_URL || "http://localhost:8000/api/v1";
-const debug = (process.env.REACT_APP_API_DEBUG || "false").toLowerCase() === "true";
+const env = typeof process !== "undefined" ? process.env || {} : ({} as any);
+const baseURL: string = (env.REACT_APP_API_BASE_URL as string) || "";
+const debug: boolean = String(env.REACT_APP_API_DEBUG || "false").toLowerCase() === "true";
 
 export const api = axios.create({
-  baseURL,
+  baseURL, // empty means use relative paths with CRA proxy in dev
   headers: {
     "Content-Type": "application/json",
   },
@@ -37,6 +42,34 @@ api.interceptors.response.use(
     return Promise.reject(error);
   }
 );
+
+/**
+ * PUBLIC_INTERFACE
+ * Set auth token header if needed; in no-auth preview it's a no-op.
+ */
+export function setAuthToken(token: string | null) {
+  if (!token) {
+    delete (api.defaults.headers as any).Authorization;
+    return;
+    }
+  (api.defaults.headers as any).Authorization = `Bearer ${token}`;
+}
+
+/**
+ * PUBLIC_INTERFACE
+ * Placeholder login/logout/register used by auth flows.
+ * In no-auth preview, they resolve immediately or simulate minimal behavior.
+ */
+export async function login(email: string, password: string) {
+  // If backend is available, this could call /auth/login; here we simulate a token.
+  return { access_token: "preview-token", expires_in: 3600 };
+}
+export async function logout() {
+  return;
+}
+export async function register(username: string, email: string, password: string) {
+  return { id: "preview", username, email, created_at: new Date().toISOString(), updated_at: new Date().toISOString() };
+}
 
 /**
  * Extracts a user-friendly error message from axios error responses that may follow

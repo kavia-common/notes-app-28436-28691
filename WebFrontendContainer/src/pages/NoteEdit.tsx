@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import NoteForm from "../components/Notes/NoteForm";
 import { getNote, updateNote } from "../services/api";
 import { useNavigate, useParams } from "react-router-dom";
+import type { Note } from "../types/index";
 
 const NoteEditPage: React.FC = () => {
   const navigate = useNavigate();

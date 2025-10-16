@@ -9,8 +9,8 @@ A lightweight React app with a polished, responsive UI for managing notes withou
 
 2) Configure environment
    cp .env.example .env
-   # then edit .env to set:
-   # REACT_APP_API_BASE_URL=http://localhost:8000/api/v1
+   # Optional: edit .env to set REACT_APP_API_BASE_URL=http://localhost:3001
+   # If not set, the app uses CRA proxy to http://localhost:3001 for relative API calls.
 
 3) Start the dev server
    npm start
@@ -20,6 +20,7 @@ A lightweight React app with a polished, responsive UI for managing notes withou
 
 - All routes are public. No auth remnants should affect the UI.
 - API base URL and optional debug logging are configured via environment variables.
+- Development proxy is configured to http://localhost:3001 to avoid CORS for relative paths.
 - The UI uses a tiny utility stylesheet at src/styles/utilities.css for consistent spacing, buttons, and layout.
 
 Refer to README-NOTES-APP.md for more details about features and endpoints.
