@@ -106,29 +106,51 @@ const NotesList: React.FC<Props> = ({ onError }): JSX.Element => {
         ) : (
           <>
             <div className="grid" role="list">
-              {notes.map((n) => (
-                <article className="card note-card" role="listitem" key={n.id}>
-                  <div className="row" style={{ justifyContent: "space-between" }}>
-                    <Link to={`/notes/${n.id}`} className="note-title">{n.title}</Link>
-                    <span className="badge">Updated</span>
-                  </div>
-                  <div className="note-meta">
-                    {new Date(n.updated_at || n.created_at).toLocaleString()}
-                  </div>
-                  {n.summary ? (
-                    <div className="note-summary">Summary: {n.summary}</div>
-                  ) : (
-                    <div className="muted" style={{ fontSize: 13 }}>No summary generated yet.</div>
-                  )}
-                  <div className="row">
-                    <Link to={`/notes/${n.id}`} className="btn btn-ghost">View</Link>
-                    <Link to={`/notes/${n.id}/edit`} className="btn btn-ghost">Edit</Link>
-                    <button onClick={() => onDelete(n.id)} className="btn btn-danger" aria-label={`Delete note ${n.title}`}>
-                      Delete
-                    </button>
-                  </div>
-                </article>
-              ))}
+              {notes.map((n) => {
+                const excerpt =
+                  typeof n.content === "string" && n.content.length > 0
+                    ? (n.content.length > 160 ? n.content.slice(0, 160) + "…" : n.content)
+                    : "";
+                return (
+                  <article className="card note-card" role="listitem" key={n.id}>
+                    <div className="row" style={{ justifyContent: "space-between" }}>
+                      <Link to={`/notes/${n.id}`} className="note-title">{n.title}</Link>
+                      <span className="badge">Updated</span>
+                    </div>
+                    <div className="note-meta">
+                      {new Date(n.updated_at || n.created_at).toLocaleString()}
+                    </div>
+
+                    {excerpt && (
+                      <div className="prose" style={{ marginTop: 8, whiteSpace: "pre-wrap" }}>
+                        {excerpt}
+                        {n.content && n.content.length > 160 && (
+                          <>
+                            {" "}
+                            <Link to={`/notes/${n.id}`} className="App-link">Read more</Link>
+                          </>
+                        )}
+                      </div>
+                    )}
+
+                    <div className="divider" style={{ margin: "10px 0", borderTop: "1px dashed var(--color-border)" }} />
+
+                    {n.summary ? (
+                      <div className="note-summary">Summary: {n.summary}</div>
+                    ) : (
+                      <div className="muted" style={{ fontSize: 13 }}>No summary generated yet.</div>
+                    )}
+
+                    <div className="row" style={{ marginTop: 10 }}>
+                      <Link to={`/notes/${n.id}`} className="btn btn-ghost">View</Link>
+                      <Link to={`/notes/${n.id}/edit`} className="btn btn-ghost">Edit</Link>
+                      <button onClick={() => onDelete(n.id)} className="btn btn-danger" aria-label={`Delete note ${n.title}`}>
+                        Delete
+                      </button>
+                    </div>
+                  </article>
+                );
+              })}
             </div>
 
             <div className="row-right" style={{ marginTop: 8 }}>

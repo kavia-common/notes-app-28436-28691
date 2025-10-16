@@ -79,7 +79,12 @@ const NoteView: React.FC<Props> = ({ onError }): JSX.Element => {
 
         {typeof summarizeNote === "function" && (
           <div className="row-right" style={{ marginTop: 16 }}>
-            <button onClick={onSummarize} disabled={summarizing} className="btn btn-primary" aria-label="Generate summary">
+            <button
+              onClick={onSummarize}
+              disabled={summarizing}
+              className="btn btn-primary summarize-btn"
+              aria-label="Generate summary"
+            >
               {summarizing ? "Summarizing..." : "Generate Summary"}
             </button>
           </div>

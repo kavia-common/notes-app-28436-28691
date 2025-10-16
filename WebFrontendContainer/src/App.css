@@ -25,7 +25,13 @@
   border-radius: 6px;
 }
 .btn-primary {
-  background: var(--color-primary);
-  color: #0b0b0b;
+  background: var(--btn-primary-bg);
+  color: var(--btn-primary-text);
   border-color: transparent;
+}
+.btn-primary:hover {
+  background: var(--btn-primary-hover-bg);
+}
+.btn-primary:active {
+  background: var(--btn-primary-active-bg);
 }

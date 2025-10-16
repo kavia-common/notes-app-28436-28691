@@ -125,8 +125,30 @@ body {
 }
 
 .btn-primary {
-  background-color: #667eea;
-  color: white;
+  background-color: var(--btn-primary-bg);
+  color: var(--btn-primary-text);
+}
+.btn-primary:hover:not(:disabled) {
+  background-color: var(--btn-primary-hover-bg);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(100, 181, 246, 0.3);
+}
+.btn-primary:active:not(:disabled) {
+  background-color: var(--btn-primary-active-bg);
+  transform: translateY(0);
+  box-shadow: none;
+}
+
+/* Dedicated selector in case we want to further tweak summarize button later */
+.summarize-btn {
+  background-color: var(--btn-primary-bg);
+  color: var(--btn-primary-text);
+}
+.summarize-btn:hover:not(:disabled) {
+  background-color: var(--btn-primary-hover-bg);
+}
+.summarize-btn:active:not(:disabled) {
+  background-color: var(--btn-primary-active-bg);
 }
 
 .btn-primary:hover:not(:disabled) {

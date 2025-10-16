@@ -4,13 +4,23 @@
   --color-surface: #1e1e1e;
   --color-text: #e0e0e0;
   --color-muted: #b0b0b0;
-  --color-primary: #90caf9;
+  /* Increase primary saturation/brightness for dark theme to boost contrast */
+  --color-primary: #64b5f6; /* was #90caf9 */
   --color-primary-contrast: #0b0b0b;
   --color-border: #2a2a2a;
-  --focus-ring: 0 0 0 3px rgba(144, 202, 249, 0.45);
+  --focus-ring: 0 0 0 3px rgba(100, 181, 246, 0.5);
 
   /* Backward-compat variable used in App.css */
   --primary: var(--color-primary);
+
+  /* Dedicated button tokens for accessibility on dark backgrounds */
+  --btn-primary-bg: var(--color-primary);
+  --btn-primary-text: #0a0a0a;
+  --btn-primary-hover-bg: #49a6f3; /* hover state with higher contrast */
+  --btn-primary-active-bg: #2196f3; /* active/pressed state */
+  --btn-danger-bg: #ef5350;
+  --btn-danger-text: #0b0b0b;
+  --btn-ghost-text: var(--color-text);
 }
 
 *,
