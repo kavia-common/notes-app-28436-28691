@@ -1,6 +1,6 @@
 import React from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { AuthProvider } from "./services/auth";
+import { AuthProvider } from "./services/auth.jsx";
 import PrivateRoute from "./routes/PrivateRoute";
 import Header from "./components/Layout/Header";
 import NotesPage from "./pages/Notes";

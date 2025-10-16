@@ -1,6 +1,6 @@
 import React from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { useAuth } from "../../services/auth";
+import { useAuth } from "../../services/auth.jsx";
 
 const Header: React.FC = () => {
   const { isAuthenticated, logout } = useAuth();

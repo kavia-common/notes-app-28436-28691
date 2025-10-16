@@ -1,2 +1,2 @@
-export * from "./auth.ts";
-export { default } from "./auth.ts";
+export { AuthProvider, useAuth } from "./auth.jsx";
+// No default export; import named APIs instead.
