@@ -28,11 +28,20 @@ const NoteEditPage: React.FC = () => {
   };
 
   return (
-    <div>
-      <h2 style={{ padding: 16, margin: 0 }}>Edit Note</h2>
-      {error && <div style={{ color: "red", paddingLeft: 16 }}>{error}</div>}
-      {initial ? <NoteForm initial={initial} onSubmit={onSubmit} submitLabel="Save Changes" /> : <div style={{ padding: 16 }}>Loading...</div>}
-    </div>
+    <main className="section">
+      <div className="container stack">
+        <div className="h1">Edit Note</div>
+        {error && <div className="banner banner-error" role="alert">{error}</div>}
+        {initial ? (
+          <NoteForm initial={initial} onSubmit={onSubmit} submitLabel="Save Changes" />
+        ) : (
+          <div className="card" style={{ padding: 24 }}>
+            <div className="skeleton" style={{ height: 22, width: "40%", marginBottom: 12 }} />
+            <div className="skeleton" style={{ height: 200, width: "100%" }} />
+          </div>
+        )}
+      </div>
+    </main>
   );
 };
 

@@ -5,6 +5,7 @@ import NotesPage from "./pages/Notes";
 import NoteCreatePage from "./pages/NoteCreate";
 import NoteEditPage from "./pages/NoteEdit";
 import NoteDetailPage from "./pages/NoteDetail";
+import "./styles/utilities.css";
 import "./App.css";
 
 /**
@@ -20,7 +21,7 @@ function App() {
         <Route path="/notes/new" element={<NoteCreatePage />} />
         <Route path="/notes/:id/edit" element={<NoteEditPage />} />
         <Route path="/notes/:id" element={<NoteDetailPage />} />
-        <Route path="*" element={<div style={{ padding: 24 }}>Not Found</div>} />
+        <Route path="*" element={<div className="container section">Not Found</div>} />
       </Routes>
     </BrowserRouter>
   );

@@ -1,19 +1,25 @@
 import React from "react";
-import { Link } from "react-router-dom";
+import { Link, NavLink } from "react-router-dom";
 
 /**
- * Simple header without authentication controls.
+ * Simple public header (no auth) with accessible navigation and primary CTA.
  */
 const Header: React.FC = () => {
   return (
-    <nav className="navbar" style={{ display: "flex", gap: 16, padding: 16, borderBottom: "1px solid var(--border-color)" }}>
-      <Link to="/notes" className="App-link" style={{ textDecoration: "none" }}>
-        Notes
-      </Link>
-      <div style={{ marginLeft: "auto", display: "flex", gap: 12 }}>
-        <Link to="/notes/new" className="App-link">New Note</Link>
+    <header className="navbar" role="banner" aria-label="Application Header">
+      <div className="container nav-inner">
+        <Link to="/notes" className="brand" aria-label="Go to notes home">Notes</Link>
+        <nav aria-label="Primary">
+          <div className="row">
+            <NavLink to="/notes" className="App-link">All Notes</NavLink>
+          </div>
+        </nav>
+        <div className="spacer" />
+        <div className="row">
+          <Link to="/notes/new" className="btn btn-primary" aria-label="Create a new note">New Note</Link>
+        </div>
       </div>
-    </nav>
+    </header>
   );
 };
 

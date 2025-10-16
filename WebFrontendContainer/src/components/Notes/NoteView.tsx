@@ -2,7 +2,6 @@ import React, { useEffect, useState } from "react";
 import { getNote, summarizeNote } from "../../services/api";
 import { useParams } from "react-router-dom";
 
-
 type Props = {
   onError: (msg: string) => void;
 };
@@ -47,27 +46,52 @@ const NoteView: React.FC<Props> = ({ onError }) => {
     }
   };
 
-  if (loading) return <div style={{ padding: 16 }}>Loading...</div>;
-  if (!note) return <div style={{ padding: 16 }}>Note not found.</div>;
+  if (loading) {
+    return (
+      <div className="container section">
+        <div className="card" style={{ padding: 24 }}>
+          <div className="skeleton" style={{ height: 22, width: "50%", marginBottom: 12 }} />
+          <div className="skeleton" style={{ height: 200, width: "100%" }} />
+        </div>
+      </div>
+    );
+  }
+  if (!note) {
+    return (
+      <div className="container section">
+        <div className="banner banner-error">Note not found.</div>
+      </div>
+    );
+  }
 
   return (
-    <div className="container" style={{ padding: 16 }}>
-      <h2 style={{ marginTop: 0 }}>{note.title}</h2>
-      <div style={{ whiteSpace: "pre-wrap", textAlign: "left", border: "1px solid var(--border-color)", borderRadius: 8, padding: 12 }}>
-        {note.content}
-      </div>
-      <div style={{ marginTop: 16 }}>
-        <button onClick={onSummarize} disabled={summarizing} className="theme-toggle" style={{ padding: "8px 12px" }}>
-          {summarizing ? "Summarizing..." : "Generate Summary"}
-        </button>
-      </div>
-      {summaryText && (
-        <div style={{ marginTop: 16, textAlign: "left" }}>
-          <strong>Summary:</strong>
-          <div style={{ marginTop: 6, fontStyle: "italic" }}>{summaryText}</div>
+    <main className="container section">
+      <article className="card" style={{ padding: 24 }}>
+        <h1 className="h1">{note.title}</h1>
+        <div className="muted" style={{ marginTop: 6 }}>
+          {new Date(note.updated_at || note.created_at).toLocaleString()}
         </div>
-      )}
-    </div>
+
+        <div className="prose" style={{ whiteSpace: "pre-wrap", marginTop: 16 }}>
+          {note.content}
+        </div>
+
+        {typeof summarizeNote === "function" && (
+          <div className="row-right" style={{ marginTop: 16 }}>
+            <button onClick={onSummarize} disabled={summarizing} className="btn btn-primary" aria-label="Generate summary">
+              {summarizing ? "Summarizing..." : "Generate Summary"}
+            </button>
+          </div>
+        )}
+
+        {summaryText && (
+          <section className="card" style={{ padding: 16, marginTop: 16 }}>
+            <div className="h2">Summary</div>
+            <div className="prose" style={{ marginTop: 8, fontStyle: "italic" }}>{summaryText}</div>
+          </section>
+        )}
+      </article>
+    </main>
   );
 };
 

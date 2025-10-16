@@ -6,7 +6,11 @@ const NoteDetailPage: React.FC = () => {
 
   return (
     <div>
-      {error && <div style={{ color: "red", padding: 12 }}>{error}</div>}
+      {error && (
+        <div className="container" style={{ paddingTop: 12 }}>
+          <div className="banner banner-error" role="alert">{error}</div>
+        </div>
+      )}
       <NoteView onError={(msg) => setError(msg)} />
     </div>
   );

@@ -1,37 +1,47 @@
-# Notes App - Web Frontend (React)
+# Notes App - Web Frontend (React, no-auth preview)
 
-This is the web React frontend for the multi-container Notes App. In this preview build, authentication is disabled:
-- No login/register pages or protected routes
-- All routes are public and land on the Notes list
-- No Authorization headers are attached to requests
+A polished, lightweight React UI for managing notes without authentication (preview mode).
 
-It provides:
-- Notes CRUD (list with pagination + search, create, edit, view, delete)
-- Generate and display summary for a note
+- Public routes only (no login/register, no protected routes)
+- Notes CRUD: list (search + pagination), create, edit, view, delete
+- Optional AI summarize action on detail page (hidden if not available)
+- Responsive, accessible layout with consistent buttons, forms, banners, and skeleton loaders
 - Environment-driven API base URL
-- Global error handling and loading states
 
-## Getting Started
+## Quick Start
 
 1) Install dependencies
    npm install
 
 2) Configure environment
    cp .env.example .env
+   # Required:
+   # REACT_APP_API_BASE_URL=http://localhost:8000/api/v1
+   # Optional:
+   # REACT_APP_API_DEBUG=true
+
    Edit .env and set REACT_APP_API_BASE_URL to your backend API (e.g., http://localhost:8000/api/v1).
-   Optional: set REACT_APP_API_DEBUG=true to log API calls for troubleshooting.
 
 3) Run the app
    npm start
-   App will run on http://localhost:3000
+   Open http://localhost:3000
 
 ## Environment Variables
 
 - REACT_APP_API_BASE_URL: Base URL of backend API, e.g., http://localhost:8000/api/v1
-- REACT_APP_API_DEBUG: If "true", logs API requests/responses to console in development
-- AUTH_ENABLED: Feature flag to guard auth code paths (false by default in this preview)
+- REACT_APP_API_DEBUG: If "true", logs API requests/responses to console (dev only)
+- AUTH_ENABLED: Ignored in no-auth preview; all routes are public.
 
-## API Endpoints (per OpenAPI)
+## UI/UX Notes
+
+- Search input debounces and automatically updates the list; empty state encourages creation.
+- Cards and skeleton loaders improve perception of speed.
+- Forms have labels, validation, and primary/secondary actions.
+- Error messages use consistent banners.
+- Buttons have accessible focus states and aria-labels where appropriate.
+
+## API Endpoints
+
 - GET /notes?search=&page=&page_size=
 - POST /notes
 - GET /notes/{id}
@@ -39,7 +49,8 @@ It provides:
 - DELETE /notes/{id}
 - POST /notes/{id}/summarize
 
-## Notes
+## Favicon/Branding
 
-- Authentication is disabled in this build. The API client does not attach Authorization headers and does not redirect on 401.
-- UI is minimal and accessible.
+If you want to customize a favicon, add an icon file in public/favicon.ico.
+This template does not add heavy assets by default to keep the preview light.
+

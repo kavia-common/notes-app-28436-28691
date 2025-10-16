@@ -12,10 +12,12 @@ const NoteCreatePage: React.FC = () => {
   };
 
   return (
-    <div>
-      <h2 style={{ padding: 16, margin: 0 }}>Create Note</h2>
-      <NoteForm onSubmit={onSubmit} submitLabel="Create" />
-    </div>
+    <main className="section">
+      <div className="container stack">
+        <div className="h1">Create Note</div>
+        <NoteForm onSubmit={onSubmit} submitLabel="Create" />
+      </div>
+    </main>
   );
 };
 
