@@ -10,7 +10,7 @@ const Header: React.FC = () => {
     <header className="navbar" role="banner" aria-label="Application Header">
       <div className="container nav-inner">
         <Link to="/" className="brand" aria-label="Go to home">
-          Notes App
+          InkWell
         </Link>
         
         <nav aria-label="Primary">

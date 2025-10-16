@@ -36,7 +36,7 @@ export default function App() {
   return (
     <div style={styles.container}>
       <header style={styles.header}>
-        <h1 style={styles.h1}>Notes Demo (No Auth)</h1>
+        <h1 style={styles.h1}>InkWell</h1>
         <p style={styles.subtitle}>
           Create a note, generate a quick summary, and save. Data persists locally for preview reliability.
         </p>
@@ -71,9 +71,9 @@ const styles = {
   subtitle: { margin: 0, color: '#6b7280' },
   main: { marginTop: 12 },
   section: {
-    background: '#fff',
+    background: 'var(--color-surface)',
     borderRadius: 8,
-    border: '1px solid #e5e7eb',
+    border: '1px solid var(--color-border)',
     padding: 16,
   },
   sectionHeader: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 },
@@ -81,9 +81,10 @@ const styles = {
   refreshBtn: {
     padding: '6px 10px',
     borderRadius: 6,
-    border: '1px solid #d1d5db',
-    background: '#f9fafb',
+    border: '1px solid var(--color-border)',
+    background: '#262626',
+    color: 'var(--color-text)',
     cursor: 'pointer',
   },
-  footer: { marginTop: 16, color: '#6b7280', textAlign: 'center' },
+  footer: { marginTop: 16, color: 'var(--color-muted)', textAlign: 'center' },
 };
