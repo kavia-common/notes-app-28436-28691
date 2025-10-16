@@ -73,7 +73,7 @@ const NoteView: React.FC<Props> = ({ onError }): JSX.Element => {
           {new Date(note.updated_at || note.created_at).toLocaleString()}
         </div>
 
-        <div className="prose" style={{ whiteSpace: "pre-wrap", marginTop: 16 }}>
+        <div className="note-content-box" style={{ marginTop: 16 }}>
           {note.content}
         </div>
 
@@ -82,7 +82,7 @@ const NoteView: React.FC<Props> = ({ onError }): JSX.Element => {
             <button
               onClick={onSummarize}
               disabled={summarizing}
-              className="btn btn-primary summarize-btn"
+              className="btn-summarize summarize-button"
               aria-label="Generate summary"
             >
               {summarizing ? "Summarizing..." : "Generate Summary"}
@@ -91,9 +91,9 @@ const NoteView: React.FC<Props> = ({ onError }): JSX.Element => {
         )}
 
         {summaryText && (
-          <section className="card" style={{ padding: 16, marginTop: 16 }}>
+          <section style={{ marginTop: 16 }}>
             <div className="h2">Summary</div>
-            <div className="prose" style={{ marginTop: 8, fontStyle: "italic" }}>{summaryText}</div>
+            <div className="note-content-box" style={{ marginTop: 8, fontStyle: "italic" }}>{summaryText}</div>
           </section>
         )}
       </article>

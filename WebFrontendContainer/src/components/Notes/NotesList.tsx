@@ -122,7 +122,7 @@ const NotesList: React.FC<Props> = ({ onError }): JSX.Element => {
                     </div>
 
                     {excerpt && (
-                      <div className="prose" style={{ marginTop: 8, whiteSpace: "pre-wrap" }}>
+                      <div className="note-content-box" style={{ marginTop: 8 }}>
                         {excerpt}
                         {n.content && n.content.length > 160 && (
                           <>

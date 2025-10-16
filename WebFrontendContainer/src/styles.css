@@ -131,7 +131,7 @@ body {
 .btn-primary:hover:not(:disabled) {
   background-color: var(--btn-primary-hover-bg);
   transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(100, 181, 246, 0.3);
+  box-shadow: 0 4px 8px rgba(34, 197, 94, 0.28);
 }
 .btn-primary:active:not(:disabled) {
   background-color: var(--btn-primary-active-bg);
@@ -139,22 +139,35 @@ body {
   box-shadow: none;
 }
 
-/* Dedicated selector in case we want to further tweak summarize button later */
-.summarize-btn {
+/* Dedicated selector for Summarize button */
+.summarize-btn,
+.btn-summarize,
+button.summarize-button {
   background-color: var(--btn-primary-bg);
   color: var(--btn-primary-text);
+  border: 1px solid transparent;
 }
-.summarize-btn:hover:not(:disabled) {
+.summarize-btn:hover:not(:disabled),
+.btn-summarize:hover:not(:disabled),
+button.summarize-button:hover:not(:disabled) {
   background-color: var(--btn-primary-hover-bg);
 }
-.summarize-btn:active:not(:disabled) {
-  background-color: var(--btn-primary-active-bg);
+.summarize-btn:focus-visible,
+.btn-summarize:focus-visible,
+button.summarize-button:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.45);
 }
 
-.btn-primary:hover:not(:disabled) {
-  background-color: #5568d3;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(102, 126, 234, 0.3);
+/* Blue content box for displaying note content */
+.note-content-box {
+  background-color: var(--content-box-bg);
+  border: 1px solid var(--content-box-border);
+  color: var(--content-box-text);
+  border-radius: 8px;
+  padding: 12px 14px;
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 
 .btn-success {

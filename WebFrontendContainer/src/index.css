@@ -4,23 +4,79 @@
   --color-surface: #1e1e1e;
   --color-text: #e0e0e0;
   --color-muted: #b0b0b0;
-  /* Increase primary saturation/brightness for dark theme to boost contrast */
-  --color-primary: #64b5f6; /* was #90caf9 */
-  --color-primary-contrast: #0b0b0b;
   --color-border: #2a2a2a;
-  --focus-ring: 0 0 0 3px rgba(100, 181, 246, 0.5);
+
+  /* Focus ring */
+  --focus-ring: 0 0 0 3px rgba(34, 197, 94, 0.5);
+
+  /* Primary (Summarize) - Green scheme */
+  --color-primary: #22c55e;               /* green-500 */
+  --color-primary-contrast: #0b0b0b;      /* text on light green */
+  --color-primary-hover: #16a34a;         /* green-600 */
+  --color-primary-active: #15803d;        /* green-700 */
 
   /* Backward-compat variable used in App.css */
   --primary: var(--color-primary);
 
-  /* Dedicated button tokens for accessibility on dark backgrounds */
+  /* Button tokens mapped to green primary */
   --btn-primary-bg: var(--color-primary);
-  --btn-primary-text: #0a0a0a;
-  --btn-primary-hover-bg: #49a6f3; /* hover state with higher contrast */
-  --btn-primary-active-bg: #2196f3; /* active/pressed state */
+  --btn-primary-text: #ffffff;            /* ensure 4.5:1 contrast on green */
+  --btn-primary-hover-bg: var(--color-primary-hover);
+  --btn-primary-active-bg: var(--color-primary-active);
   --btn-danger-bg: #ef5350;
   --btn-danger-text: #0b0b0b;
   --btn-ghost-text: var(--color-text);
+
+  /* Content box - Blue scheme */
+  --content-box-bg: rgba(37, 99, 235, 0.12); /* blue-600 with alpha for dark/light blend */
+  --content-box-border: #3b82f6;             /* blue-500 */
+  --content-box-text: #93c5fd;               /* blue-300 for readability on dark */
+}
+
+/* Summarize button class for consistency */
+.btn-summarize, .summarize-btn, button.summarize-button {
+  background-color: var(--btn-primary-bg);
+  color: var(--btn-primary-text);
+  border: 1px solid transparent;
+  padding: 0.5rem 0.75rem;
+  border-radius: 8px;
+  font-weight: 600;
+  transition: background-color 120ms ease, box-shadow 120ms ease, transform 60ms ease;
+}
+.btn-summarize:hover, .summarize-btn:hover, button.summarize-button:hover {
+  background-color: var(--btn-primary-hover-bg);
+}
+.btn-summarize:active, .summarize-btn:active, button.summarize-button:active {
+  background-color: var(--btn-primary-active-bg);
+  transform: translateY(0.5px);
+}
+.btn-summarize:focus-visible, .summarize-btn:focus-visible, button.summarize-button:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.45);
+}
+
+/* Content display box styled in blue */
+.note-content-box {
+  background-color: var(--content-box-bg);
+  border: 1px solid var(--content-box-border);
+  color: var(--content-box-text);
+  border-radius: 10px;
+  padding: 12px 14px;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.note-content-box h1,
+.note-content-box h2,
+.note-content-box h3,
+.note-content-box h4,
+.note-content-box h5,
+.note-content-box h6,
+.note-content-box p,
+.note-content-box li,
+.note-content-box code,
+.note-content-box pre {
+  color: var(--content-box-text);
 }
 
 *,
