@@ -20,12 +20,35 @@ const NoteForm: React.FC<Props> = ({ initial = { title: "", content: "" }, onSub
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    
+    // Validate inputs
+    if (!title.trim() || !content.trim()) {
+      setError("Please fill in all required fields.");
+      return;
+    }
+    
     if (hasErrors) return;
+    
     setLoading(true);
     try {
       await onSubmit({ title: title.trim(), content: content.trim() });
     } catch (e: any) {
-      setError(e?.response?.data?.message || "Failed to submit form.");
+      console.error("Form submission error:", e);
+      
+      // Extract error message from various sources
+      let errorMessage = "Failed to submit form.";
+      
+      if (e?.message && typeof e.message === "string") {
+        errorMessage = e.message;
+      } else if (e?.response?.data?.message) {
+        errorMessage = e.response.data.message;
+      } else if (e?.response?.data?.detail) {
+        errorMessage = e.response.data.detail;
+      } else if (e?.uiMessage) {
+        errorMessage = e.uiMessage;
+      }
+      
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }

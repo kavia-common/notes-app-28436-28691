@@ -5,14 +5,14 @@ import * as noAuthApi from "./api-noauth";
  * Axios API client with no-auth mode support.
  * When REACT_APP_NO_AUTH=true, uses local storage instead of backend.
  */
-const env = typeof process !== "undefined" ? process.env || {} : ({} as any);
 
-const NO_AUTH_MODE = String(env.REACT_APP_NO_AUTH || "false").toLowerCase() === "true";
-const useProxy: boolean = String(env.REACT_APP_USE_PROXY || "false").toLowerCase() === "true";
+// Detect no-auth mode - must check at module load time
+const NO_AUTH_MODE = process.env.REACT_APP_NO_AUTH === 'true';
+const useProxy: boolean = process.env.REACT_APP_USE_PROXY === 'true';
 const baseURL: string = useProxy 
   ? "" 
-  : (env.REACT_APP_API_BASE_URL as string) || "http://localhost:3001/api/v1";
-const debug: boolean = String(env.REACT_APP_API_DEBUG || "false").toLowerCase() === "true";
+  : (process.env.REACT_APP_API_BASE_URL || "http://localhost:3001/api/v1");
+const debug: boolean = process.env.REACT_APP_API_DEBUG === 'true';
 
 if (debug) {
   console.info(`[API CONFIG] No-Auth Mode: ${NO_AUTH_MODE}`);
@@ -199,10 +199,11 @@ export async function summarizeNote(id: string) {
 
 // PUBLIC_INTERFACE
 export async function importNoteFromFile(file: File) {
-  /** Imports a note from a file. Only available in no-auth mode. */
+  /** Imports a note from a file. Available in no-auth mode using localStorage. */
   if (NO_AUTH_MODE) {
     return noAuthApi.importNoteFromFile(file);
   }
   
-  throw new Error('File import is only available in no-auth mode');
+  // In auth mode, this feature is not supported by the backend
+  throw new Error('File import is not available in authenticated mode. Please use the create note form.');
 }

@@ -8,6 +8,7 @@ const NotesPage: React.FC = () => {
   const [importing, setImporting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
+  // Check no-auth mode at runtime
   const NO_AUTH_MODE = process.env.REACT_APP_NO_AUTH === 'true';
 
   const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -33,16 +34,24 @@ const NotesPage: React.FC = () => {
         fileInputRef.current.value = '';
       }
       
-      // Trigger refresh of notes list
-      window.location.reload();
+      // Trigger refresh of notes list after a short delay
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
     } catch (err: any) {
-      setError(err?.message || 'Failed to import note');
+      console.error('Import error:', err);
+      const errorMessage = err?.message || 'Failed to import note';
+      setError(errorMessage);
     } finally {
       setImporting(false);
     }
   };
 
   const triggerFileInput = () => {
+    if (!NO_AUTH_MODE) {
+      setError('File import is only available in no-auth mode');
+      return;
+    }
     fileInputRef.current?.click();
   };
 
@@ -66,7 +75,7 @@ const NotesPage: React.FC = () => {
               <div>
                 <strong>Import Notes</strong>
                 <p className="muted" style={{ marginTop: 4, marginBottom: 0, fontSize: 13 }}>
-                  Upload .txt or .md files to import notes
+                  Upload .txt or .md files to import notes with automatic summaries
                 </p>
               </div>
               <button 

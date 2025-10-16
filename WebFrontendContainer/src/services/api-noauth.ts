@@ -26,7 +26,8 @@ function getNotesFromStorage(): Note[] {
   try {
     const data = localStorage.getItem(STORAGE_KEY);
     return data ? JSON.parse(data) : [];
-  } catch {
+  } catch (e) {
+    console.error('Failed to read notes from localStorage:', e);
     return [];
   }
 }
@@ -37,11 +38,16 @@ function saveNotesToStorage(notes: Note[]): void {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(notes));
   } catch (e) {
     console.error('Failed to save notes to localStorage:', e);
+    throw new Error('Failed to save note. Storage may be full.');
   }
 }
 
 // Generate a simple summary (first 3 sentences or 150 chars)
 function generateLocalSummary(content: string): string {
+  if (!content || content.trim().length === 0) {
+    return '';
+  }
+  
   // Try to get first few sentences
   const sentences = content.match(/[^.!?]+[.!?]+/g) || [];
   if (sentences.length > 0) {
@@ -96,14 +102,24 @@ export async function createNote(payload: { title: string; content: string }): P
     throw new Error('No-auth mode not enabled');
   }
 
+  // Validate inputs
+  if (!payload.title || payload.title.trim().length === 0) {
+    throw new Error('Title is required');
+  }
+  
+  if (!payload.content || payload.content.trim().length === 0) {
+    throw new Error('Content is required');
+  }
+
   const notes = getNotesFromStorage();
   const now = new Date().toISOString();
   
   const newNote: Note = {
     id: `note_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
     user_id: 'local_user',
-    title: payload.title,
-    content: payload.content,
+    title: payload.title.trim(),
+    content: payload.content.trim(),
+    summary: generateLocalSummary(payload.content.trim()),
     created_at: now,
     updated_at: now,
   };
@@ -119,6 +135,10 @@ export async function getNote(id: string): Promise<Note> {
   /** Retrieves a note by ID from localStorage. */
   if (!NO_AUTH_MODE) {
     throw new Error('No-auth mode not enabled');
+  }
+
+  if (!id) {
+    throw new Error('Note ID is required');
   }
 
   const notes = getNotesFromStorage();
@@ -138,6 +158,19 @@ export async function updateNote(id: string, payload: { title: string; content: 
     throw new Error('No-auth mode not enabled');
   }
 
+  // Validate inputs
+  if (!id) {
+    throw new Error('Note ID is required');
+  }
+  
+  if (!payload.title || payload.title.trim().length === 0) {
+    throw new Error('Title is required');
+  }
+  
+  if (!payload.content || payload.content.trim().length === 0) {
+    throw new Error('Content is required');
+  }
+
   const notes = getNotesFromStorage();
   const index = notes.findIndex(n => n.id === id);
   
@@ -147,8 +180,9 @@ export async function updateNote(id: string, payload: { title: string; content: 
   
   notes[index] = {
     ...notes[index],
-    title: payload.title,
-    content: payload.content,
+    title: payload.title.trim(),
+    content: payload.content.trim(),
+    summary: generateLocalSummary(payload.content.trim()),
     updated_at: new Date().toISOString(),
   };
   
@@ -163,8 +197,17 @@ export async function deleteNote(id: string): Promise<void> {
     throw new Error('No-auth mode not enabled');
   }
 
+  if (!id) {
+    throw new Error('Note ID is required');
+  }
+
   const notes = getNotesFromStorage();
   const filtered = notes.filter(n => n.id !== id);
+  
+  if (notes.length === filtered.length) {
+    throw new Error('Note not found');
+  }
+  
   saveNotesToStorage(filtered);
 }
 
@@ -173,6 +216,10 @@ export async function summarizeNote(id: string): Promise<{ summary: string }> {
   /** Generates a local summary for a note using simple heuristics. */
   if (!NO_AUTH_MODE) {
     throw new Error('No-auth mode not enabled');
+  }
+
+  if (!id) {
+    throw new Error('Note ID is required');
   }
 
   const notes = getNotesFromStorage();
@@ -199,21 +246,36 @@ export async function importNoteFromFile(file: File): Promise<Note> {
     throw new Error('No-auth mode not enabled');
   }
 
+  if (!file) {
+    throw new Error('No file provided');
+  }
+
+  // Validate file type
+  if (!file.name.endsWith('.txt') && !file.name.endsWith('.md')) {
+    throw new Error('Only .txt and .md files are supported');
+  }
+
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     
     reader.onload = async (e) => {
       try {
         const content = e.target?.result as string;
+        
+        if (!content || content.trim().length === 0) {
+          reject(new Error('File is empty'));
+          return;
+        }
+        
         const fileName = file.name.replace(/\.(txt|md)$/, '');
         
         const note = await createNote({
-          title: fileName,
-          content: content,
+          title: fileName || 'Imported Note',
+          content: content.trim(),
         });
         
         resolve(note);
-      } catch (error) {
+      } catch (error: any) {
         reject(error);
       }
     };
