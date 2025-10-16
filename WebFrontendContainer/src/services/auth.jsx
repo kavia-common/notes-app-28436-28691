@@ -28,9 +28,14 @@ export function AuthProvider({ children }) {
     try {
       const data = await apiLogin(email, password);
       const access = data && typeof data === "object" ? data.access_token : null;
-      setToken(access || null);
+      if (access) {
+        setToken(access);
+        localStorage.setItem("token", access);
+      } else {
+        throw new Error("No access token received from server");
+      }
     } catch (e) {
-      // propagate with normalized message if present
+      // Re-throw with enhanced error message if available
       throw e;
     }
   }, []);
@@ -44,8 +49,12 @@ export function AuthProvider({ children }) {
   }, []);
 
   const logout = useCallback(async () => {
-    await apiLogout();
-    setToken(null);
+    try {
+      await apiLogout();
+    } finally {
+      setToken(null);
+      localStorage.removeItem("token");
+    }
   }, []);
 
   const value = useMemo(

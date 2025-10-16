@@ -21,31 +21,71 @@ const LoginPage: React.FC = () => {
       await login(email, password);
       navigate(from, { replace: true });
     } catch (e: any) {
-      setError(e?.response?.data?.message || "Login failed. Check your credentials.");
+      // Use enhanced error message from API client
+      const msg = e?.uiMessage || e?.response?.data?.message || "Login failed. Check your credentials.";
+      setError(msg);
     } finally {
       setSubmitting(false);
     }
   };
 
   return (
-    <div className="container" style={{ maxWidth: 420, padding: 16 }}>
-      <h2>Login</h2>
-      <form onSubmit={onSubmit}>
-        <div style={{ marginBottom: 12 }}>
-          <label htmlFor="email">Email</label>
-          <input id="email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} style={{ display: "block", width: "100%", padding: 8 }} />
+    <div className="container section" style={{ maxWidth: 480 }}>
+      <div className="card" style={{ padding: 32 }}>
+        <h1 className="h1">Login</h1>
+        <p className="muted" style={{ marginTop: 8, marginBottom: 24 }}>
+          Sign in to access your notes
+        </p>
+        
+        <form onSubmit={onSubmit} className="stack">
+          <div>
+            <label htmlFor="email" className="label">Email</label>
+            <input 
+              id="email" 
+              type="email" 
+              required 
+              className="input"
+              value={email} 
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="your.email@example.com"
+              disabled={submitting}
+            />
+          </div>
+          
+          <div>
+            <label htmlFor="password" className="label">Password</label>
+            <input 
+              id="password" 
+              type="password" 
+              required 
+              className="input"
+              value={password} 
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Enter your password"
+              disabled={submitting}
+            />
+          </div>
+          
+          {error && (
+            <div className="banner banner-error" role="alert">
+              {error}
+            </div>
+          )}
+          
+          <button 
+            type="submit" 
+            className="btn btn-primary" 
+            disabled={submitting}
+            style={{ width: "100%" }}
+          >
+            {submitting ? "Logging in..." : "Login"}
+          </button>
+        </form>
+        
+        <div style={{ marginTop: 20, textAlign: "center" }}>
+          <span className="muted">Don't have an account? </span>
+          <Link to="/register" className="App-link">Register here</Link>
         </div>
-        <div style={{ marginBottom: 12 }}>
-          <label htmlFor="password">Password</label>
-          <input id="password" type="password" required value={password} onChange={(e) => setPassword(e.target.value)} style={{ display: "block", width: "100%", padding: 8 }} />
-        </div>
-        {error && <div style={{ color: "red", marginBottom: 8 }}>{error}</div>}
-        <button type="submit" className="theme-toggle" disabled={submitting} style={{ padding: "8px 12px" }}>
-          {submitting ? "Logging in..." : "Login"}
-        </button>
-      </form>
-      <div style={{ marginTop: 12 }}>
-        Don't have an account? <Link to="/register">Register</Link>
       </div>
     </div>
   );

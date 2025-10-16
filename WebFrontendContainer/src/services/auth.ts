@@ -25,7 +25,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const data = await apiLogin(email, password) as { access_token?: string; expires_in?: number } | any;
       const access = (data && typeof data === "object" && "access_token" in data ? (data.access_token as string | undefined) : undefined) || null;
-      setToken(access || null);
+      if (access) {
+        setToken(access);
+        localStorage.setItem("token", access);
+      } else {
+        throw new Error("No access token received from server");
+      }
     } catch (e) {
       throw e;
     }
@@ -40,8 +45,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const logout = useCallback(async () => {
-    await apiLogout();
-    setToken(null);
+    try {
+      await apiLogout();
+    } finally {
+      setToken(null);
+      localStorage.removeItem("token");
+    }
   }, []);
 
   const value = useMemo(

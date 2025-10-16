@@ -2,26 +2,34 @@ import axios from "axios";
 
 /**
  * Axios API client configured with:
- * - Base URL from REACT_APP_API_BASE_URL
+ * - Base URL from REACT_APP_API_BASE_URL or fallback to http://localhost:3001/api/v1
  * - Optional debug logging via REACT_APP_API_DEBUG
- * - No authentication headers or redirects (auth disabled)
+ * - Authorization header attachment when token exists
+ * - Enhanced error handling with user-friendly messages
  *
  * Dev note:
- * If REACT_APP_API_BASE_URL is not set, we rely on CRA proxy (package.json "proxy") so relative paths
- * will be forwarded to http://localhost:3001 to avoid CORS during development.
+ * In production/preview, set REACT_APP_API_BASE_URL to the full backend URL including /api/v1.
+ * In development, we use absolute URL to avoid CRA proxy conflicts.
  */
 const env = typeof process !== "undefined" ? process.env || {} : ({} as any);
-const baseURL: string = (env.REACT_APP_API_BASE_URL as string) || "";
+const baseURL: string = (env.REACT_APP_API_BASE_URL as string) || "http://localhost:3001/api/v1";
 const debug: boolean = String(env.REACT_APP_API_DEBUG || "false").toLowerCase() === "true";
 
 export const api = axios.create({
-  baseURL, // empty means use relative paths with CRA proxy in dev
+  baseURL,
   headers: {
     "Content-Type": "application/json",
   },
+  timeout: 30000, // 30 second timeout
 });
 
 api.interceptors.request.use((config) => {
+  // Attach Authorization header if token exists
+  const token = localStorage.getItem("token");
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+
   if (debug) {
     // eslint-disable-next-line no-console
     console.log("[API REQ]", config.method?.toUpperCase(), config.baseURL + config.url, config.params || "", config.data || "");
@@ -38,37 +46,77 @@ api.interceptors.response.use(
     return resp;
   },
   (error) => {
-    // Pass-through errors without auth redirects
+    if (debug) {
+      // eslint-disable-next-line no-console
+      console.error("[API ERR]", error.response?.status, error.response?.data || error.message);
+    }
+    // Enhance error with user-friendly message
+    if (error.response) {
+      error.uiMessage = getApiErrorMessage(error);
+    } else if (error.request) {
+      error.uiMessage = "Network error. Please check your connection and ensure the backend is running.";
+    } else {
+      error.uiMessage = "Request failed. Please try again.";
+    }
     return Promise.reject(error);
   }
 );
 
 /**
  * PUBLIC_INTERFACE
- * Set auth token header if needed; in no-auth preview it's a no-op.
+ * Set auth token header if needed.
  */
 export function setAuthToken(token: string | null) {
   if (!token) {
     delete (api.defaults.headers as any).Authorization;
+    localStorage.removeItem("token");
     return;
-    }
+  }
   (api.defaults.headers as any).Authorization = `Bearer ${token}`;
+  localStorage.setItem("token", token);
 }
 
 /**
  * PUBLIC_INTERFACE
- * Placeholder login/logout/register used by auth flows.
- * In no-auth preview, they resolve immediately or simulate minimal behavior.
+ * Login user with email and password. Returns access token and expiry.
  */
 export async function login(email: string, password: string) {
-  // If backend is available, this could call /auth/login; here we simulate a token.
-  return { access_token: "preview-token", expires_in: 3600 };
+  try {
+    const { data } = await api.post("/auth/login", { email, password });
+    if (data.access_token) {
+      setAuthToken(data.access_token);
+    }
+    return data;
+  } catch (err: any) {
+    throw err;
+  }
 }
+
+/**
+ * PUBLIC_INTERFACE
+ * Logout user and clear token.
+ */
 export async function logout() {
-  return;
+  try {
+    await api.post("/auth/logout");
+  } catch (e) {
+    // Logout failure is not critical
+  } finally {
+    setAuthToken(null);
+  }
 }
+
+/**
+ * PUBLIC_INTERFACE
+ * Register new user with username, email, and password.
+ */
 export async function register(username: string, email: string, password: string) {
-  return { id: "preview", username, email, created_at: new Date().toISOString(), updated_at: new Date().toISOString() };
+  try {
+    const { data } = await api.post("/auth/register", { username, email, password });
+    return data;
+  } catch (err: any) {
+    throw err;
+  }
 }
 
 /**
@@ -79,16 +127,40 @@ export function getApiErrorMessage(err: any, fallback = "Request failed.") {
   const data = err?.response?.data;
   if (!data) return fallback;
 
-  const possible =
-    data?.message ||
-    data?.error ||
-    data?.details ||
-    (Array.isArray(data?.detail)
-      ? data.detail.map((d: any) => d?.msg || d).filter(Boolean).join(", ")
-      : data?.detail);
+  // Handle OpenAPI ErrorResponse format
+  if (data?.message && typeof data.message === "string") {
+    return data.message;
+  }
 
-  if (possible && typeof possible === "string") return possible;
+  // Handle FastAPI validation errors
+  if (Array.isArray(data?.detail)) {
+    const messages = data.detail
+      .map((d: any) => {
+        if (typeof d === "string") return d;
+        if (d?.msg) return d.msg;
+        if (d?.message) return d.message;
+        return null;
+      })
+      .filter(Boolean);
+    if (messages.length > 0) return messages.join(", ");
+  }
 
+  // Handle simple detail string
+  if (data?.detail && typeof data.detail === "string") {
+    return data.detail;
+  }
+
+  // Handle error field
+  if (data?.error && typeof data.error === "string") {
+    return data.error;
+  }
+
+  // Handle details field
+  if (data?.details && typeof data.details === "string") {
+    return data.details;
+  }
+
+  // Handle nested errors object
   if (data?.errors && typeof data.errors === "object") {
     try {
       const firstKey = Object.keys(data.errors)[0];
@@ -99,46 +171,71 @@ export function getApiErrorMessage(err: any, fallback = "Request failed.") {
       /* ignore parsing issues */
     }
   }
+
   return fallback;
 }
 
 // PUBLIC_INTERFACE
 export async function listNotes(params: { page?: number; page_size?: number; search?: string } = {}) {
   /** Calls GET /notes with optional pagination and search. */
-  const { data } = await api.get("/notes", { params });
-  return data;
+  try {
+    const { data } = await api.get("/notes", { params });
+    return data;
+  } catch (err: any) {
+    throw err;
+  }
 }
 
 // PUBLIC_INTERFACE
 export async function createNote(payload: { title: string; content: string }) {
   /** Calls POST /notes to create a note. */
-  const { data } = await api.post("/notes", payload);
-  return data;
+  try {
+    const { data } = await api.post("/notes", payload);
+    return data;
+  } catch (err: any) {
+    throw err;
+  }
 }
 
 // PUBLIC_INTERFACE
 export async function getNote(id: string) {
   /** Calls GET /notes/{id} to retrieve a note. */
-  const { data } = await api.get(`/notes/${id}`);
-  return data;
+  try {
+    const { data } = await api.get(`/notes/${id}`);
+    return data;
+  } catch (err: any) {
+    throw err;
+  }
 }
 
 // PUBLIC_INTERFACE
 export async function updateNote(id: string, payload: { title: string; content: string }) {
   /** Calls PUT /notes/{id} to update a note. */
-  const { data } = await api.put(`/notes/${id}`, payload);
-  return data;
+  try {
+    const { data } = await api.put(`/notes/${id}`, payload);
+    return data;
+  } catch (err: any) {
+    throw err;
+  }
 }
 
 // PUBLIC_INTERFACE
 export async function deleteNote(id: string) {
   /** Calls DELETE /notes/{id} to delete a note. */
-  await api.delete(`/notes/${id}`);
+  try {
+    await api.delete(`/notes/${id}`);
+  } catch (err: any) {
+    throw err;
+  }
 }
 
 // PUBLIC_INTERFACE
 export async function summarizeNote(id: string) {
   /** Calls POST /notes/{id}/summarize to generate a summary for a note. */
-  const { data } = await api.post(`/notes/${id}/summarize`);
-  return data;
+  try {
+    const { data } = await api.post(`/notes/${id}/summarize`);
+    return data;
+  } catch (err: any) {
+    throw err;
+  }
 }
